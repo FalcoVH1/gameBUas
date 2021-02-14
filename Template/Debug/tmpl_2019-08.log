@@ -1,0 +1,3 @@
+﻿  game.cpp
+D:\projectBUAS\Template\game.cpp(415,12): warning C4553: '==': result of expression not used; did you intend '='?
+  tmpl_2019-08.vcxproj -> D:\projectBUAS\Template\tmpl_2019-08_x86_debug.exe
