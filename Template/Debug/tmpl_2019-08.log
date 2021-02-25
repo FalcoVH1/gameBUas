@@ -1,3 +1,5 @@
 ﻿  game.cpp
-D:\projectBUAS\Template\game.cpp(415,12): warning C4553: '==': result of expression not used; did you intend '='?
+D:\projectBUAS\Template\game.cpp(618,31): warning C4018: '<': signed/unsigned mismatch
+D:\projectBUAS\Template\game.cpp(936,22): warning C4018: '<': signed/unsigned mismatch
+D:\projectBUAS\Template\game.cpp(1006,18): warning C4018: '<': signed/unsigned mismatch
   tmpl_2019-08.vcxproj -> D:\projectBUAS\Template\tmpl_2019-08_x86_debug.exe

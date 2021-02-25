@@ -56,6 +56,11 @@ public:
 			y += subtrahend.y
 		};
 	}
+
+	void set(int X, int Y) {
+		x = X;
+		y = Y;
+	}
 };
 
 class Objective {
@@ -88,6 +93,10 @@ public:
 	
 	}
 
+	coords getCoords() {
+		return {x, y};
+	}
+
 	int getX() {
 		return x;
 	}
@@ -110,10 +119,9 @@ private:
 	coords pastPlaces[15];
 	int x = -1, 
 		y = -1,
-		health = 0,
-		speed = 0,
-		//attackType, //0 = melee, 2 = long range, 3 = mortar strike
-		damageN = 1, //amount of damage unit can deal
+		health = -1,
+		speed = -1,
+		damageN = 0, //amount of damage unit can deal
 		moveState = 0, //0 = hasn't moved, 1 = is moving, 2 = has moved
 		attackState = 0, //0 = hasn't attacked, 1 = is selecting, 2 = is attacking
 		moveCycle = 0; //indicates how many tiles a unit has moved
@@ -122,26 +130,39 @@ private:
 	unitMovementType movementType = unitMovementType::GROUND;
 	unitDirection uDir = unitDirection::NORTH;
 public:
-	Unit(int X, int Y, int Health, int Speed, unitType Type, unitMovementType mvType) {
+	Unit(int X, int Y, int Health, int Speed, int Damage, unitType Type, unitMovementType mvType) {
 		x = X;
 		y = Y;
 		health = Health;
 		speed = Speed;
+		damageN = Damage;
 		attackType = Type;
 		movementType = mvType;
-
-		switch (attackType) {
-		case unitType::MELEE: damageN = 3;
-			break;
-		case unitType::RANGED: damageN = 1;
-			break;
-		case unitType::MORTAR: damageN = 2;
-			break;
-		default: damageN = 1;
-		}
 	}
 
 	Unit() = default;
+
+	void set(Unit u) {
+
+		memcpy(pastPlaces, u.pastPlaces, sizeof(pastPlaces) / sizeof(pastPlaces[0]));
+
+		x = u.x;
+		y = u.y;
+		health = u.health;
+		speed = u.speed;
+		damageN = u.damageN;
+		moveState = u.moveState;
+		attackState = u.attackState;
+		moveCycle = u.moveCycle;
+		isMoving = u.isMoving;
+		attackType = u.attackType;
+		movementType = u.movementType;
+		uDir = u.uDir;
+	}
+
+	void setDir(unitDirection dir) {
+		uDir = dir;
+	}
 
 	coords getPastPlaces(int index) {
 		return pastPlaces[index];
@@ -269,11 +290,19 @@ public:
 		}
 	}
 
-	int returnAttackArray(coords selected, int X, int Y) {
+	void clearPastPlaces() {
+		memset(pastPlaces, 0, sizeof(pastPlaces));
+	}
+
+	unitType getUnitType() {
+		return attackType;
+	}
+
+	int returnAttackArray(coords selected, int X, int Y) { //unitLocation is used exclusively because the AI requires checking a units attack array from any position on the map
 
 		int diffX, diffY;
 		if (selected.x - x != 0) {
-			diffX = (selected.x -x) / abs(selected.x - x);
+			diffX = (selected.x - x) / abs(selected.x - x);
 		}
 		else diffX = 0;
 		if (selected.y - y != 0) {
@@ -286,14 +315,14 @@ public:
 		switch (attackType) {
 		case unitType::MELEE: startVal = 1; endVal = 2;
 			break;
-		case unitType::RANGED: startVal = 1; endVal = 5;
+		case unitType::RANGED: startVal = 1; endVal = 4;
 			break;
 		case unitType::MORTAR: startVal = 4; endVal = 5;
 			break;
 		default: startVal = 1; endVal = 2;
 		}
 
-		//finds coordinates
+		//finds coordinates --should probably replace 9 here but doesn't matter for now
 		if ((x + diffX < 9 && x + diffX >= 0 && y + diffY < 9 && y + diffY >= 0)) {
 
 			for (int t = startVal; t < endVal; t++) {
@@ -317,9 +346,8 @@ private:
 	coords world = {0, 0};
 	coords origin = { 0, 0 };
 
-	float distanceMap[9][9] = { 0 }; //map of the distance any object is from a selected unit
+	
 	int unitPlacement[9][9] = { 0 }; //map of all current units
-	int threatenedPlaces[9][9] = { 0 }; //map of all places on the map which are threatened
 	int worldField[9][9] = { 0 }; //terrain map
 
 	bool canMove = true,
@@ -328,8 +356,8 @@ public:
 
 	//10 units max; units with 0 0 0 0 are automatically killed and don't appear on the field
 	//so essentially; any amount of units up to 10
-	Unit fUnits[10] = { Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND) };
-	Unit eUnits[10] = { Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND) };
+	Unit fUnits[10] = { Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND) };
+	Unit eUnits[10] = { Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND) };
 
 	Objective eObjtv = {0, 0, 0};
 	Objective fObjtv = { 0, 0, 0 };
@@ -363,7 +391,7 @@ public:
 	gameState() = default;
 
 
-	void equals(gameState gs) {
+	void set(gameState gs) {
 
 		friendlyUnitsAm = gs.getFUnitsAm();
 		enemyUnitsAm = gs.getEUnitsAm();
@@ -373,9 +401,7 @@ public:
 
 		for (int x = 0; x < world.x; x++) {
 			for (int y = 0; y < world.y; y++) {
-				distanceMap[x][y] = gs.getDistanceMap(x, y);
 				unitPlacement[x][y] = gs.getUnitPlacement(x, y);
-				threatenedPlaces[x][y] = gs.getThreatenedPlaces(x, y);
 				worldField[x][y] = gs.getWorldField(x, y);
 			}
 		}
@@ -397,32 +423,12 @@ public:
 
 	//arrays
 
-	void setDistanceMap(int x, int y, float val) {
-		distanceMap[x][y] = val;
-	}
-
-	float getDistanceMap(int x, int y) {
-		return distanceMap[x][y];
-	}
-
 	void setUnitPlacement(int x, int y, int val) {
 		unitPlacement[x][y] = val;
 	}
 
 	int getUnitPlacement(int x, int y) {
 		return unitPlacement[x][y];
-	}
-
-	void setThreatenedPlaces(int x, int y, int val) {
-		threatenedPlaces[x][y] = val;
-	}
-
-	int getThreatenedPlaces(int x, int y) {
-		return threatenedPlaces[x][y];
-	}
-
-	void clearThreatenedPlaces() {
-		memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
 	}
 
 	void setWorldField(int x, int y, int val) {
@@ -441,7 +447,7 @@ public:
 
 		//this could be done way cleaner; too bad!
 		for (int t = 0; t < sizeof(fUnits) / sizeof(fUnits[0]); t++) {
-			fUnits[t] = Unit(0, 0, 0, 0, unitType::MELEE, unitMovementType::GROUND);
+			fUnits[t] = Unit(0, 0, 0, 0, 0, unitType::MELEE, unitMovementType::GROUND);
 		}
 
 		for (int t = 0; t < friendlyUnitsAm; t++) {
