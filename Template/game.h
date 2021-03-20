@@ -9,11 +9,48 @@ namespace Tmpl8 {
 
 class Surface;
 
-enum class unitDirection {NORTH, EAST, SOUTH, WEST};
+enum class unitDirection { NORTH, EAST, SOUTH, WEST };
 	
 enum class unitType { MORTAR, RANGED, MELEE };
 
 enum class unitMovementType { GROUND, NAVAL, AERIAL };
+
+const int worldsX = 9, worldsY = 9;
+
+class Button {
+public:
+	int x, y, width, height;
+
+	Button(int X, int Y, int Width, int Height) {
+		x = X;
+		y = Y;
+		width = Width;
+		height = Height;
+	}
+
+	Button() = default;
+
+	int getX2() {
+		return x + width;
+	}
+
+	int getY2() {
+		return y + height;
+	}
+};
+
+class LevelButton : public Button {
+public:
+	int type;
+
+	LevelButton(int X, int Y, int Width, int Height, int Type) {
+		x = X;
+		y = Y;
+		width = Width;
+		height = Height;
+		type = Type;
+	}
+};
 
 class coords {
 public:
@@ -61,89 +98,79 @@ public:
 		x = X;
 		y = Y;
 	}
+
+	void se2(coords XY) {
+		x = XY.x;
+		y = XY.y;
+	}
 };
 
 class Objective {
-private:
-	int x, y, health;
+private: int health;
 public:
+	int x, y; //make health private- maybe
+
 	Objective(int X, int Y, int Health) {
 		x = X;
 		y = Y;
 		health = Health;
 	}
 
-	void setHealth(int Health) {
-		health = Health;
-	}
-
 	void takeDamage(int damageValue) {
 		health -= damageValue;
-		if (health <= 0) {
-			x = -1;
-			y = -1;
-		}
 	}
 
 	int getHealth() {
 		return health;
 	}
-	
-	void kill() {
-	
-	}
 
 	coords getCoords() {
 		return {x, y};
 	}
-
-	int getX() {
-		return x;
-	}
-
-	int getY() {
-		return y;
-	}
-
-	void setX(int X) {
-		x = X;
-	}
-
-	void setY(int Y) {
-		y = Y;
-	}
 };
+
+
 
 class Unit {
 private:
-	coords pastPlaces[15];
-	int x = -1, 
-		y = -1,
-		health = -1,
-		speed = -1,
+	int health = -1,
+		speed = -1, //speed is private because it should remain unchanged, only being readable
 		damageN = 0, //amount of damage unit can deal
-		moveState = 0, //0 = hasn't moved, 1 = is moving, 2 = has moved
-		attackState = 0, //0 = hasn't attacked, 1 = is selecting, 2 = is attacking
 		moveCycle = 0; //indicates how many tiles a unit has moved
-	bool isMoving = false;
-	unitType attackType = unitType::MELEE;
-	unitMovementType movementType = unitMovementType::GROUND;
+
+		unitType attackType = unitType::MELEE;
+		unitMovementType movementType = unitMovementType::GROUND;
+		coords pastPlaces[15];
+public: 
+	int x = -1,
+		y = -1,
+		moveState = 0, //0 = hasn't moved, 1 = is moving, 2 = has moved
+		attackState = 0; //0 = hasn't attacked, 1 = is selecting, 2 = is attacking
+
 	unitDirection uDir = unitDirection::NORTH;
-public:
-	Unit(int X, int Y, int Health, int Speed, int Damage, unitType Type, unitMovementType mvType) {
+
+	Unit(int X, int Y, int Health, int Speed, unitType Type, unitMovementType mvType) {
 		x = X;
 		y = Y;
 		health = Health;
 		speed = Speed;
-		damageN = Damage;
 		attackType = Type;
 		movementType = mvType;
+
+		switch (attackType) {
+		case unitType::MELEE: damageN = 15;
+			break;
+		case unitType::RANGED: damageN = 15;
+			break;
+		case unitType::MORTAR: damageN = 15;
+			break;
+		default: damageN = 1;
+		}
 	}
 
 	Unit() = default;
 
 	void set(Unit u) {
-
 		memcpy(pastPlaces, u.pastPlaces, sizeof(pastPlaces) / sizeof(pastPlaces[0]));
 
 		x = u.x;
@@ -154,86 +181,34 @@ public:
 		moveState = u.moveState;
 		attackState = u.attackState;
 		moveCycle = u.moveCycle;
-		isMoving = u.isMoving;
 		attackType = u.attackType;
 		movementType = u.movementType;
 		uDir = u.uDir;
 	}
 
-	void setDir(unitDirection dir) {
-		uDir = dir;
+	void kill() {
+		health = -1;
+	}
+
+	bool isAlive() {
+		if (health > 0) return true;
+		else return false;
+	}
+
+	unitType getUnitType() {
+		return attackType;
+	}
+
+	unitMovementType getMvType() {
+		return movementType;
 	}
 
 	coords getPastPlaces(int index) {
 		return pastPlaces[index];
 	}
 
-	int getMoveCycle() {
-		return moveCycle;
-	}
-
-	void setMoveCycle(int nC) {
-		moveCycle = nC;
-	}
-
-	coords getCoords() {
-		return coords{ x, y };
-	}
-
-	bool getIsMoving() {
-		return isMoving;
-	}
-
-	void setMoveState(int moved) {
-		moveState = moved;
-	}
-
-	void setAttackState(int attacked) {
-		attackState = attacked;
-	}
-
-	int getMoveState() {
-		return moveState;
-	}
-
-	int getAttackState() {
-		return attackState;
-	}
-
-	int getX() {
-		return x;
-	}
-
-	int getY() {
-		return y;
-	}
-
-	void setX(int X) {
-		x = X;
-	}
-
-	void setY(int Y) {
-		y = Y;
-	}
-
-	void setSpeed(int Speed) {
-		speed = Speed;
-	}
-
-	void setHealth(int Health) {
-		health = Health;
-	}
-
-	void takeDamage(int damageValue) {
-		health -= damageValue;
-		if (health <= 0) {
-			x = -1;
-			y = -1;
-		}
-	}
-
-	int getDamage() {
-		return damageN;
+	int getSpeed() {
+		return speed;
 	}
 
 	void setCoords(coords newCoords) {
@@ -241,61 +216,74 @@ public:
 		y = newCoords.y;
 	}
 
-	int getHealth() {
-		return health;
+	coords getCoords() {
+		return coords{ x, y };
 	}
 
-	int getSpeed() {
-		return speed;
+	void damageUnit(Unit * unitToAttack) {
+		unitToAttack->takeDamage(damageN);
+	}
+
+	void damageObj(Objective * objToAttack) {
+		objToAttack->takeDamage(damageN);
+	}
+
+	void takeDamage(int damageValue) {
+		health -= damageValue;
 	}
 
 	void move(coords coordsToMoveTo) {
 
-		int tempx = x - coordsToMoveTo.x;
-		int tempy = y - coordsToMoveTo.y;
+		if (moveCycle < speed - 1) {
+			int tempx = x - coordsToMoveTo.x;
+			int tempy = y - coordsToMoveTo.y;
 
-		if (tempx == 1 && tempy == 0) { uDir = unitDirection::WEST; }
-		if (tempx == 0 && tempy == 1) { uDir = unitDirection::NORTH; }
-		if (tempx == -1 && tempy == 0) { uDir = unitDirection::EAST; }
-		if (tempx == 0 && tempy == -1) { uDir = unitDirection::SOUTH; }
+			if (tempx == 1 && tempy == 0) { uDir = unitDirection::WEST; }
+			if (tempx == 0 && tempy == 1) { uDir = unitDirection::NORTH; }
+			if (tempx == -1 && tempy == 0) { uDir = unitDirection::EAST; }
+			if (tempx == 0 && tempy == -1) { uDir = unitDirection::SOUTH; }
 
 
-		//code below stores array of last moves for units to go back without spending more tiles
+			//code below stores array of last moves for units to go back without spending more tiles
 
-		pastPlaces[moveCycle] = { x, y };
+			pastPlaces[moveCycle] = { x, y };
 
-		int temp;
-		if ((moveCycle - 1) <= 0) {
-			temp = 0;
+			int temp;
+			if ((moveCycle - 1) <= 0) {
+				temp = 0;
+			}
+			else {
+				temp = moveCycle - 1;
+			}
+
+
+			if (coordsToMoveTo.x == pastPlaces[temp].x && coordsToMoveTo.y == pastPlaces[temp].y) {
+				x = coordsToMoveTo.x;
+				y = coordsToMoveTo.y;
+				moveCycle--;
+			}
+			else {
+				x = coordsToMoveTo.x;
+				y = coordsToMoveTo.y;
+				moveCycle++;
+			}
+
+			//fills coords of array with (-1, -1), a spot outside the map
+			for (int t = moveCycle; t < speed; t++) {
+				pastPlaces[t] = { -1, -1 };
+			}
 		}
 		else {
-			temp = moveCycle - 1;
-		}
-
-
-		if (coordsToMoveTo.x == pastPlaces[temp].x && coordsToMoveTo.y == pastPlaces[temp].y) {
 			x = coordsToMoveTo.x;
 			y = coordsToMoveTo.y;
-			moveCycle--;
-		}
-		else {
-			x = coordsToMoveTo.x;
-			y = coordsToMoveTo.y;
-			moveCycle++;
-		}
-
-		//fills coords of array with (-1, -1), a spot outside the map
-		for (int t = moveCycle; t < speed; t++) {
-			pastPlaces[t] = { -1, -1 };
+			moveState = 2;
 		}
 	}
 
 	void clearPastPlaces() {
-		memset(pastPlaces, 0, sizeof(pastPlaces));
-	}
-
-	unitType getUnitType() {
-		return attackType;
+		for (int t = 0; t < sizeof(pastPlaces) / sizeof(pastPlaces[0]); t++) {
+			pastPlaces[t].set(-1, -1);
+		}
 	}
 
 	int returnAttackArray(coords selected, int X, int Y) { //unitLocation is used exclusively because the AI requires checking a units attack array from any position on the map
@@ -333,48 +321,49 @@ public:
 		}
 		return 0;
 	};
-
-	unitMovementType getMvType() {
-		return movementType;
-	}
 };
 
 
-class gameState {
+class GameState {
 private:
 	int friendlyUnitsAm = 0, enemyUnitsAm = 0;
-	coords world = {0, 0};
+
 	coords origin = { 0, 0 };
+	
+	int unitPlacement[worldsX][worldsY] = { 0 }; //map of all current units
+	int worldField[worldsX][worldsY] = { 0 }; //terrain map
 
 	
-	int unitPlacement[9][9] = { 0 }; //map of all current units
-	int worldField[9][9] = { 0 }; //terrain map
-
-	bool canMove = true,
-		areAttacking = false;
 public: 
 
-	//10 units max; units with 0 0 0 0 are automatically killed and don't appear on the field
-	//so essentially; any amount of units up to 10
-	Unit fUnits[10] = { Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND) };
-	Unit eUnits[10] = { Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND), Unit(-1, -1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND) };
+	//---------------------IMPORTANT-NOTE---------------------//
+	
+	//this is all gross. 
+	//std::vector would've been better. Too late now to change. 
+	//not that big a problem, it just limits levels to 9x9 squares.
 
-	Objective eObjtv = {0, 0, 0};
+	//3 units max;
+
+	Unit fUnits[3];
+	Unit eUnits[3];
+
+	Objective eObjtv = { 0, 0, 0 };
 	Objective fObjtv = { 0, 0, 0 };
+
+	bool areAttacking = false, completed = false;
 
 	//initializerlist was used so we can use coords and objective in the constructor class
 
-	gameState(coords size, coords origin, Objective EOBJ, Objective FOBJ, int *arr, Unit FUnits[], Unit EUnits[], int fUnitsAm, int eUnitsAm) : 
-		world(size.x, size.y),
+	GameState(coords origin, Objective EOBJ, Objective FOBJ, int * arr, Unit * FUnits, Unit * EUnits, int fUnitsAm, int eUnitsAm) : 
 		origin(origin.x, origin.y),
-		eObjtv( EOBJ.getX(), EOBJ.getY(), EOBJ.getHealth() ), 
-		fObjtv(FOBJ.getX(), FOBJ.getY(), FOBJ.getHealth() ) {
+		eObjtv( EOBJ.x, EOBJ.y, EOBJ.getHealth() ), 
+		fObjtv(FOBJ.x, FOBJ.y, FOBJ.getHealth()) {
 
 		friendlyUnitsAm = fUnitsAm;
 		enemyUnitsAm = eUnitsAm;
 
-		for (int x = 0; x < world.x; x++) {
-			for (int y = 0; y < world.y; y++) {
+		for (int x = 0; x < worldsX; x++) {
+			for (int y = 0; y < worldsY; y++) {
 				worldField[x][y] = *arr;
 				arr++;
 			}
@@ -388,26 +377,24 @@ public:
 		}
 	}
 
-	gameState() = default;
+	GameState() = default;
 
 
-	void set(gameState gs) {
+	void set(GameState gs) {
 
 		friendlyUnitsAm = gs.getFUnitsAm();
 		enemyUnitsAm = gs.getEUnitsAm();
 
-		world = gs.getWorld();
 		origin = gs.getOrigin();
 
-		for (int x = 0; x < world.x; x++) {
-			for (int y = 0; y < world.y; y++) {
+		for (int x = 0; x < worldsX; x++) {
+			for (int y = 0; y < worldsY; y++) {
 				unitPlacement[x][y] = gs.getUnitPlacement(x, y);
 				worldField[x][y] = gs.getWorldField(x, y);
 			}
 		}
 
-		canMove = gs.getCanMove();
-		areAttacking = gs.getAreAttacking();
+		areAttacking = gs.areAttacking;
 
 		for (int t = 0; t < friendlyUnitsAm; t++) {
 			fUnits[t] = gs.fUnits[t];
@@ -420,6 +407,39 @@ public:
 		eObjtv = gs.eObjtv;
 	}
 
+
+	bool winloss() {
+
+		if (eObjtv.getHealth() <= 0) {
+			return true;
+		}
+
+		if (fObjtv.getHealth() <= 0) {
+			return false;
+		}
+
+		bool fAlive = false;
+		for (int t = 0; t < friendlyUnitsAm; t++) {
+			if (fUnits[t].isAlive()) {
+				fAlive = true;
+			}
+		}
+		if (!fAlive) {
+			return true;
+		}
+
+		bool eAlive = false;
+		for (int t = 0; t < enemyUnitsAm; t++) {
+			if (eUnits[t].isAlive()) {
+				eAlive = true;
+			}
+		}
+		if (!eAlive) {
+			return true;
+		}
+
+		return false;
+	}
 
 	//arrays
 
@@ -447,32 +467,12 @@ public:
 
 		//this could be done way cleaner; too bad!
 		for (int t = 0; t < sizeof(fUnits) / sizeof(fUnits[0]); t++) {
-			fUnits[t] = Unit(0, 0, 0, 0, 0, unitType::MELEE, unitMovementType::GROUND);
+			fUnits[t] = Unit(0, 0, 0, 0, unitType::MELEE, unitMovementType::GROUND);
 		}
 
 		for (int t = 0; t < friendlyUnitsAm; t++) {
 			fUnits[t] = FUnits[t];
 		}
-	}
-
-	void setCanMove(bool canmove) {
-		canMove = canmove;
-	}
-
-	bool getCanMove() {
-		return canMove;
-	}
-
-	void setAreAttacking(bool areattacking) {
-		areAttacking = areattacking;
-	}
-
-	bool getAreAttacking() {
-		return areAttacking;
-	}
-
-	coords getWorld() {
-		return world;
 	}
 
 	coords getOrigin() {
@@ -515,7 +515,6 @@ public:
 			mousex, mousey
 		};
 	};
-
 };
 
 

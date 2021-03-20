@@ -11,8 +11,8 @@
 #include <cstdlib>
 #include <cstdio>
 
-constexpr int ScreenWidth = 1200;
-constexpr int ScreenHeight = 900;
+constexpr int ScreenWidth = 1152; //the chad 4:3 vs the virgin 16:9
+constexpr int ScreenHeight = 864;
 //#define FULLSCREEN
 // #define ADVANCEDGL	// faster if your system supports it. Switches SDL2's texture buffer out for OpenGL texture buffer with mappings to CPU Memory. 
 

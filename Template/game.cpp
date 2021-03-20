@@ -5,8 +5,10 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <math.h> 
+#include <string>
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 using namespace std;
 
@@ -26,27 +28,94 @@ namespace Tmpl8
 	 -You from the past
 	 */
 
-	Surface* tiles = new Surface("assets/defTiles.png");
+
+
+	 //------------------------------------------------------------------------------------------------global variables------------------------------------------------------------------------------------------------//
+
+
+	 //Surface* tiles = new Surface("assets/defTiles.png");
 	Surface* colTile = new Surface("assets/specialTile.png");
+	//Surface* selectTile = new Surface("assets/selectTile.png");
+	Surface* defaultAnt = new Surface("assets/defaultAnt.png");
 
-	int AItimer = 0, AIstep = 0, turnState = 0, lvID = 0, moveStep = 0;
+	Sprite planetSelect(new Surface("assets/menuScreen.png"), 1);
+	Sprite planet0(new Surface("assets/planet0.png"), 1);
+	Sprite planet1(new Surface("assets/planet1.png"), 1);
+	Sprite planet2(new Surface("assets/planet2.png"), 1);
+	Sprite planet3(new Surface("assets/planet3.png"), 1);
+	Sprite button(new Surface("assets/button.png"), 10);
 
-	coords mousePos(0, 0), currentCell(0, 0), offset(0, 0), selected(0, 0), selectedUnit(0, 0), selectedWorldPx(0, 0), tileSize(64, 32);
-	coords directions[4] = {
+	Sprite selectTileS(new Surface("assets/selectTile.png"), 1);
+	Sprite pathTile(new Surface("assets/pathTile.png"), 1);
+	Sprite groundTiles(new Surface("assets/defTiles.png"), 3);
+	Sprite Mountain(new Surface("assets/mountain.png"), 1);
+	Sprite antHill(new Surface("assets/antsObj.png"), 1);
+	Sprite menu(new Surface("assets/menu.png"), 1);
+
+	Sprite antCEO(new Surface("assets/antCEO.png"), 1);
+
+	int AItimer = 0, AIstep = 0, turnState = 0, lvID = 0, wrldID = 0, moveStep = 0, worldSelect = 100, levelSelect = 100;
+	bool inGame = false;
+
+	coords mousePos(0, 0), currentCell(0, 0), offset(0, 0), selected(0, 0), selectedUnit(0, 0), selectedWorldPx(0, 0), tileSize(64, 48);
+
+	const coords directions[4] = {
 		coords(0, 1),
 		coords(0, -1),
 		coords(1, 0),
 		coords(-1, 0),
 	};
 
-	int distanceMap[9][9] = { 0 }; //map of the distance any object is from a selected unit
-	int threatenedPlaces[9][9] = { 0 }; //map of all places on the map which are threatened
-	int AIPMoves[9][9] = { 0 }; //places AI can move to
-	int scannedAreas[9][9] = { 0 };
+	LevelButton goBackBtn(50, 50, 50, 50, 6);
 
-	std::vector<coords> pathToTake(0);
+	Button worldSelectBtns[4] = {
+		Button(110, 246, 120, 120),
+		Button(350, 422, 133, 133),
+		Button(648, 158, 238, 238),
+		Button(878, 468, 154, 154)
+	};
 
-	int worldField[10][9][9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	LevelButton levelSelectBtns[4][6] = {
+		LevelButton(90, 300, 50, 50, 0),
+		LevelButton(290, 260, 50, 50, 1),
+		LevelButton(480, 200, 50, 50, 2),
+		LevelButton(640, 120, 50, 50, 3),
+		LevelButton(800, 180, 50, 50, 4),
+		LevelButton(910, 340, 50, 50, 5),
+
+		LevelButton(130, 235, 50, 50, 0),
+		LevelButton(252, 382, 50, 50, 1),
+		LevelButton(453, 482, 50, 50, 2),
+		LevelButton(605, 511, 50, 50, 3),
+		LevelButton(735, 398, 50, 50, 4),
+		LevelButton(912, 464, 50, 50, 5),
+
+		LevelButton(93, 233, 50, 50, 0),
+		LevelButton(287, 283, 50, 50, 1),
+		LevelButton(461, 377, 50, 50, 2),
+		LevelButton(582, 521, 50, 50, 3),
+		LevelButton(722, 605, 50, 50, 4),
+		LevelButton(934, 490, 50, 50, 5),
+
+		LevelButton(337, 130, 50, 50, 0),
+		LevelButton(251, 252, 50, 50, 1),
+		LevelButton(282, 450, 50, 50, 2),
+		LevelButton(531, 445, 50, 50, 3),
+		LevelButton(736, 392, 50, 50, 4),
+		LevelButton(1006, 392, 50, 50, 5)
+	};
+
+	int distanceMap[worldsX][worldsY] = { 0 }; //map of the distance any object is from a selected unit
+	int threatenedPlaces[worldsX][worldsY] = { 0 }; //map of all places on the map which are threatened
+	int AIPMoves[worldsX][worldsY] = { 0 }; //places AI can move to
+	int scannedAreas[worldsX][worldsY] = { 0 };
+
+	int worldField[4][6][9][9] = {
+
+		//world 1 
+
+		//level 1
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 1, 0, 0, 0, 0,
 		0, 0, 0, 0, 1, 0, 0, 0, 0,
@@ -55,99 +124,312 @@ namespace Tmpl8
 		0, 0, 2, 2, 2, 2, 2, 0, 0,
 		0, 2, 2, 2, 2, 2, 2, 2, 0,
 		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		//level 2
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		//level 3
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 1, 1, 1, 1, 1, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 2, 2, 2, 2,
+		//level 4
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 2, 2, 2, 2, 2, 0, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		//level 5
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		//level 6
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 1, 1, 1, 1, 1, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 2, 2, 2, 2,
 
-								 0, 0, 0, 0, 0, 0, 0, 0, 0,
-								 0, 0, 0, 0, 0, 0, 0, 0, 0,
-								 0, 0, 0, 0, 0, 0, 0, 0, 0,
-								 0, 0, 0, 0, 0, 0, 0, 0, 0,
-								 0, 0, 0, 0, 0, 0, 0, 0, 0,
-								 0, 0, 0, 0, 0, 0, 0, 0, 0,
-								 0, 0, 0, 0, 0, 0, 0, 0, 0,
-								 0, 0, 0, 0, 0, 0, 0, 0, 0,
-								 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		//world 2
 
-								 2, 2, 2, 2, 1, 1, 2, 2, 2,
-								 2, 2, 2, 2, 1, 1, 2, 2, 2,
-								 2, 2, 2, 2, 1, 1, 2, 2, 2,
-								 2, 2, 2, 2, 1, 1, 2, 2, 2,
-								 2, 2, 1, 1, 1, 1, 1, 2, 2,
-								 2, 2, 2, 2, 1, 1, 2, 2, 2,
-								 2, 2, 2, 2, 2, 1, 2, 2, 2,
-								 2, 2, 2, 2, 2, 1, 2, 2, 2,
-								 2, 2, 2, 2, 2, 2, 2, 2, 2, }; //terrain map
+		//level 1
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 2, 2, 2, 2, 2, 0, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		//level 2
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		//level 3
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 1, 1, 1, 1, 1, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 2, 2, 2, 2,
+		//level 4
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 2, 2, 2, 2, 2, 0, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		//level 5
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		//level 6
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 1, 1, 1, 1, 1, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 2, 2, 2, 2,
 
-	Unit fUnits[10][3] = { Unit(1, 7, 3, 15, 5, unitType::RANGED, unitMovementType::AERIAL), Unit(4, 7, 3, 15, 1, unitType::RANGED, unitMovementType::GROUND), Unit(7, 7, 3, 15, 2, unitType::MORTAR, unitMovementType::NAVAL) };
+		//world 3
 
-	Unit eUnits[10][3] = { Unit(1, 1, 3, 3, 3, unitType::MELEE, unitMovementType::GROUND), Unit(4, 1, 3, 3, 1, unitType::MELEE, unitMovementType::GROUND), Unit(7, 2, 3, 3, 2, unitType::MORTAR, unitMovementType::NAVAL) };
+		//level 1
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 2, 2, 2, 2, 2, 0, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		//level 2
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		//level 3
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 1, 1, 1, 1, 1, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 2, 2, 2, 2,
+		//level 4
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 2, 2, 2, 2, 2, 0, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		//level 5
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		//level 6
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 1, 1, 1, 1, 1, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 2, 2, 2, 2,
 
-	gameState level[10] = {
-		gameState({9, 9}, {8, 4} ,{4, 0, 7}, {4, 8, 7}, &worldField[0][0][0], fUnits[0], eUnits[0], sizeof(fUnits[0]) / sizeof(fUnits[0][0]), sizeof(fUnits[0]) / sizeof(fUnits[0][0])),
-		gameState({9, 9}, {8, 4} ,{4, 0, 7}, {4, 8, 7},&worldField[1][0][0], fUnits[0], eUnits[0], sizeof(fUnits[0]) / sizeof(fUnits[0][0]), sizeof(fUnits[0]) / sizeof(fUnits[0][0])),
-		gameState({9, 9}, {8, 4} ,{4, 0, 7}, {4, 8, 7},& worldField[2][0][0], fUnits[0], eUnits[0], sizeof(fUnits[0]) / sizeof(fUnits[0][0]), sizeof(fUnits[0]) / sizeof(fUnits[0][0]))
+		//world 4
+
+		//level 1
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 2, 2, 2, 2, 2, 0, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		//level 2
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		//level 3
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 1, 1, 1, 1, 1, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 2, 2, 2, 2,
+		//level 4
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 1, 0, 0, 0, 0,
+		0, 0, 2, 2, 2, 2, 2, 0, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		0, 2, 2, 2, 2, 2, 2, 2, 0,
+		//level 5
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0,
+		//level 6
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 1, 1, 1, 1, 1, 2, 2,
+		2, 2, 2, 2, 1, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 1, 2, 2, 2,
+		2, 2, 2, 2, 2, 2, 2, 2, 2,
+
+	}; //terrain map
+
+	Unit fUnits[4][6][3] = {
+		Unit(1, 7, 3, 15, unitType::RANGED, unitMovementType::AERIAL), Unit(4, 7, 3, 15, unitType::RANGED, unitMovementType::GROUND), Unit(7, 7, 3, 15, unitType::MORTAR, unitMovementType::NAVAL)
 	};
 
-	gameState levelBackup;
+	Unit eUnits[4][6][3] = {
+		Unit(1, 1, 3, 3, unitType::RANGED, unitMovementType::GROUND), Unit(4, 1, 3, 3, unitType::MELEE, unitMovementType::GROUND), Unit(7, 2, 3, 3, unitType::MORTAR, unitMovementType::NAVAL)
+	};
+
+	GameState level[4][6];
+	GameState levelBackup;
+
+	std::vector<coords> pathToTake(0);
+
+	//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+
 
 	void setDistanceMap(coords c1);
 	bool onMap(coords c);
+	bool canMoveHere(Unit* unit, int x, int y);
+	int getDist(coords c1, coords c2);
+	void resetUnits();
 
 	void moveUnits(Unit* fUnits, Unit* eUnits, coords selectedC, int fUnitsAm, int eUnitsAm) {
-
-		if (level[lvID].getCanMove()) {
 
 			//resets attacking before move phase
 			memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
 			for (int i = 0; i < fUnitsAm; i++) {
-				fUnits[i].setAttackState(0);
+				fUnits[i].attackState = 0;
+				//fUnits[i].clearPastPlaces();
 			};
 
 			for (int i = 0; i < eUnitsAm; i++) {
-				eUnits[i].setAttackState(0);
+				eUnits[i].attackState = 0;
+				//eUnits[i].clearPastPlaces();
 			};
 
 			for (int t = 0; t < fUnitsAm; t++) {
 
 				//if units haven't moved, transition to them moving
 
-				if (fUnits[t].getMoveState() == 0) {
+				if (fUnits[t].moveState == 0) {
 					if (selectedC.equals(fUnits[t].getCoords())) {
-						fUnits[t].setMoveState(1);
+						fUnits[t].moveState = 1;
 					}
 				}
-				else if (fUnits[t].getMoveState() == 1) {
-
-					//first checks if the move is eligible, then sets a new destination for the unit to move to. if the move is ineligible, the unit is set back to movestate 0, aka "hasn't moved".
+				else if (fUnits[t].moveState == 1) {
 
 					bool targetOccupied = false;
-					for (int t = 0; t < fUnitsAm; t++) {
-						if (selectedC.equals(fUnits[t].getCoords())) {
-							targetOccupied = true;
-						}
-					}
-					for (int t = 0; t < eUnitsAm; t++) {
-						if (selectedC.equals(eUnits[t].getCoords())) {
-							targetOccupied = true;
-						}
+					//first checks if the move is eligible, then sets a new destination for the unit to move to. if the move is ineligible, the unit is set back to movestate 0, aka "hasn't moved".
+					if (selectedC.equals(level[wrldID][lvID].eObjtv.getCoords()) || selectedC.equals(level[wrldID][lvID].fObjtv.getCoords())) {
+						targetOccupied = true;
 					}
 
 					//currently checks how far fields are away from unit, but this might have to change to accomodate for terrain, etc.
 
-					if (onMap(selectedC) && distanceMap[selectedC.x][selectedC.y] <= 1.0f && !targetOccupied) {
+					if (onMap(selectedC) && getDist(selectedC, fUnits[t].getCoords()) == 1.0 && !targetOccupied && canMoveHere(&fUnits[t], selectedC.x, selectedC.y)) {
 
 						//-1 to getSpeed because the last square of movement gets done in the else- part of this statement
-						if (fUnits[t].getMoveCycle() <= fUnits[t].getSpeed() - 1) {
-							fUnits[t].move(selectedC);
-						}
-						else {
-							fUnits[t].move(selectedC);
-							fUnits[t].setMoveState(2);
-						}
+						fUnits[t].move(selectedC);
 					}
 					else {
-						fUnits[t].setMoveState(0);
+						fUnits[t].moveState = 0;
 					}
 				}
-			}
 		}
 	}
 
@@ -155,45 +437,59 @@ namespace Tmpl8
 
 		//resets movement before attack phase
 		for (int i = 0; i < fUnitsAm; i++) {
-			fUnits[i].setMoveState(0);
-			fUnits[i].setMoveCycle(0);
+			fUnits[i].moveState = 0;
+			fUnits[i].moveState = 0;
 		};
 
 		for (int i = 0; i < eUnitsAm; i++) {
-			eUnits[i].setMoveState(0);
-			eUnits[i].setMoveCycle(0);
+			eUnits[i].moveState = 0;
+			eUnits[i].moveState = 0;
 		};
 
 		for (int t = 0; t < fUnitsAm; t++) {
-			if (fUnits[t].getAttackState() == 0) {
+			if (fUnits[t].attackState == 0) {
 				//starts target selection
 				if (selectedC.equals(fUnits[t].getCoords())) {
-					fUnits[t].setAttackState(1);
+					fUnits[t].attackState = 1;
 				}
 			}
-			else if (fUnits[t].getAttackState() == 1) {
+			else if (fUnits[t].attackState == 1) {
 
 				//resets attack when clicking other friendly unit
 
-				fUnits[t].setAttackState(3);
+				fUnits[t].attackState = 3;
 				for (int t1 = 0; t1 < fUnitsAm; t1++) {
 					if (selectedC.equals(fUnits[t1].getCoords())) {
-						fUnits[t].setAttackState(0);
+						fUnits[t].attackState = 0;
 					}
 				}
 
 				//execute attack by damaging all enemy units in attack range
 				for (int t1 = 0; t1 < eUnitsAm; t1++) {
-					if (threatenedPlaces[eUnits[t1].getX()][eUnits[t1].getY()] == 1) {
-						eUnits[t1].takeDamage(fUnits[t].getDamage());
+					if (threatenedPlaces[eUnits[t1].x][eUnits[t1].y] == 1) {
+						//eUnits[t1].takeDamage(fUnits[t].getDamage());
+						fUnits[t].damageUnit(&eUnits[t1]);
 					}
 				}
-				if (threatenedPlaces[Obj->getX()][Obj->getY()] == 1) {
-					Obj->takeDamage(fUnits[t].getDamage());
+				if (threatenedPlaces[Obj->x][Obj->y] == 1) {
+					fUnits[t].damageObj(Obj);
 				}
 				memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
 			}
 		}
+
+		//printf(level[wrldID][lvID].winloss() ? "true" : "false");
+		if (level[wrldID][lvID].winloss()) {
+
+			level[wrldID][lvID].set(levelBackup);
+			resetUnits();
+			turnState = 0;
+			worldSelect = 100;
+			level[wrldID][lvID].completed = true;
+			
+			inGame = false;
+		}
+		//level[wrldID][lvID].winloss();
 	}
 
 
@@ -218,14 +514,14 @@ namespace Tmpl8
 	}
 
 	//sets full attack array for the game to know which squares to mark
-	void returnThreatArray(Unit* Unit, coords s, int arr[9][9]) {
-		for (int i = 0; i < level[lvID].getWorld().x; i++) {
-			for (int j = 0; j < level[lvID].getWorld().y; j++) {
+	void returnThreatArray(Unit* Unit, coords s, int arr[worldsX][worldsY]) {
+		for (int i = 0; i < worldsX; i++) {
+			for (int j = 0; j < worldsY; j++) {
 				//wonky code, kinda; essentially, returns a value of 0 if the field given as parameters is outside of attack range of unit, returns 1 if it's inside.
 				//could be optimized with an array of coordinates of a variable size
 
 				//ended up not being as wonky as I expected it to be :)
-				threatenedPlaces[i][j] = Unit->returnAttackArray(s, i, j);
+				arr[i][j] = Unit->returnAttackArray(s, i, j);
 			}
 		}
 	};
@@ -233,65 +529,85 @@ namespace Tmpl8
 	//converts ingame coordinates to on screen coordinates
 	coords toScreen(int x, int y) {
 		return coords{
-				(level[lvID].getOrigin().x * tileSize.x) + (x - y) * (tileSize.x / 2),
-				(level[lvID].getOrigin().y * tileSize.y) + (x + y) * (tileSize.y / 2)
+				(level[wrldID][lvID].getOrigin().x * tileSize.x) + (x - y) * (tileSize.x / 2),
+				(level[wrldID][lvID].getOrigin().y * tileSize.y) + (x + y) * (tileSize.y / 2)
 		};
 	}
 
 	//draws units
-	void drawUnits(Surface* screen, Unit* fUnits, int fUnitsAm, int X, int Y) {
+	void drawUnits(Surface* screen, Unit* fUnits, int fUnitsAm) {
 		for (int t = 0; t < fUnitsAm; t++) {
 
 			//kills land units if they somehow arrive on water
-			if (fUnits[t].getMvType() == unitMovementType::GROUND && level[lvID].getWorldField(fUnits[t].getX(), fUnits[t].getY()) == 2) {
-				fUnits[t].takeDamage(fUnits[t].getHealth());
+			if (fUnits[t].getMvType() == unitMovementType::GROUND && level[wrldID][lvID].getWorldField(fUnits[t].x, fUnits[t].y) == 2) {
+				fUnits[t].kill();
 			}
 
 			//kills naval units if they somehow arrive on land
-			if (fUnits[t].getMvType() == unitMovementType::NAVAL && level[lvID].getWorldField(fUnits[t].getX(), fUnits[t].getY()) != 2) {
-				fUnits[t].takeDamage(fUnits[t].getHealth());
+			if (fUnits[t].getMvType() == unitMovementType::NAVAL && level[wrldID][lvID].getWorldField(fUnits[t].x, fUnits[t].y) != 2) {
+				fUnits[t].kill();
 			}
 
-			if (fUnits[t].getHealth() > 0 && fUnits[t].getX() == X && fUnits[t].getY() == Y) {
+			if (fUnits[t].isAlive()) {
 
-				coords temp = toScreen(fUnits[t].getX(), fUnits[t].getY());
+				coords temp = toScreen(fUnits[t].x, fUnits[t].y);
 
-				if (fUnits[t].getHealth() > 0) {
-					draw(1, 1, screen, tiles, temp.x, temp.y, 64, 128, tileSize.y, tileSize.x);
+				int dir, type;
+
+				switch (fUnits[t].uDir) {
+				case unitDirection::NORTH: dir = 2;
+					break;
+				case unitDirection::EAST: dir = 1;
+					break;
+				case unitDirection::SOUTH: dir = 0;
+					break;
+				case unitDirection::WEST: dir = 3;
+					break;
 				}
+
+				switch (fUnits[t].getMvType()) {
+				case unitMovementType::AERIAL: type = 0;
+					break;
+				case unitMovementType::GROUND: type = 1;
+					break;
+				case unitMovementType::NAVAL: type = 2;
+					break;
+				}
+					
+				draw(dir, type, screen, defaultAnt, temp.x, temp.y - 14, 64, 64 * 4, 64, 64);
 
 
 				//gets the center of the movable-unit-circle thingy
-				if (fUnits[t].getMoveState() == 1) {
+				if (fUnits[t].moveState == 1) {
 					selectedUnit.set(fUnits[t].getCoords().x, fUnits[t].getCoords().y);
 				}
 
-				if (fUnits[t].getAttackState() == 1) {
+				if (fUnits[t].attackState == 1) {
 
-					level[lvID].setAreAttacking(true);
+					level[wrldID][lvID].areAttacking = true;
 
 					//draws cancel attack button
 					screen->Bar(270, 450, 330, 500, 0x0000ff);
 
 					//gets threatened fields for attacking units
-					if (selected.x == fUnits[t].getX() && selected.y < fUnits[t].getY()) {
+					if (selected.x == fUnits[t].x && selected.y < fUnits[t].y) {
 						memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
-						fUnits[t].setDir(unitDirection::SOUTH);
+						fUnits[t].uDir = unitDirection::NORTH;
 						returnThreatArray(&fUnits[t], selected, threatenedPlaces);
 					}
-					else if (selected.x == fUnits[t].getX() && selected.y > fUnits[t].getY()) {
+					else if (selected.x == fUnits[t].x && selected.y > fUnits[t].y) {
 						memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
-						fUnits[t].setDir(unitDirection::NORTH);
+						fUnits[t].uDir = unitDirection::SOUTH;
 						returnThreatArray(&fUnits[t], selected, threatenedPlaces);
 					}
-					else if (selected.x < fUnits[t].getX() && selected.y == fUnits[t].getY()) {
+					else if (selected.x < fUnits[t].x && selected.y == fUnits[t].y) {
 						memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
-						fUnits[t].setDir(unitDirection::WEST);
+						fUnits[t].uDir = unitDirection::WEST;
 						returnThreatArray(&fUnits[t], selected, threatenedPlaces);
 					}
-					else if (selected.x > fUnits[t].getX() && selected.y == fUnits[t].getY()) {
+					else if (selected.x > fUnits[t].x && selected.y == fUnits[t].y) {
 						memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
-						fUnits[t].setDir(unitDirection::EAST);
+						fUnits[t].uDir = unitDirection::EAST;
 						returnThreatArray(&fUnits[t], selected, threatenedPlaces);
 					}
 				}
@@ -299,139 +615,314 @@ namespace Tmpl8
 		}
 	}
 
-	void drawObjectives(Objective fObj, Surface* screen, int X, int Y) {
-		if (fObj.getX() == X && fObj.getY() == Y) {
-			if (fObj.getHealth() > 0) {
+	void drawObjectives(Objective fObj, Surface* screen, Sprite* obj) {
+		if (fObj.getHealth() > 0) {
 
-				coords temp = toScreen(fObj.getX(), fObj.getY());
+			coords temp = toScreen(fObj.x, fObj.y);
 
-				draw(1, 1, screen, tiles, temp.x, temp.y, 64, 128, tileSize.y, tileSize.x);
-			}
+			//draw(2, 0, screen, tiles, temp.x, temp.y, tileSize.y, tileSize.x * 3, tileSize.y, tileSize.x);
+
+			obj->DrawScaled(temp.x, temp.y - 20, 64, 64, screen);
 		}
 	}
 
 	void resetUnits() {
 		memset(AIPMoves, 0, sizeof(AIPMoves));
 		memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
+		memset(scannedAreas, 0, sizeof(scannedAreas));
 		//pathToTake.resize(0);
 
-		for (int i = 0; i < level[lvID].getFUnitsAm(); i++) {
-			level[lvID].fUnits[i].setAttackState(0);
+		for (int i = 0; i < level[wrldID][lvID].getFUnitsAm(); i++) {
+			level[wrldID][lvID].fUnits[i].attackState = 0;
 
-			level[lvID].fUnits[i].setMoveState(0);
-			level[lvID].fUnits[i].setMoveCycle(0);
+			level[wrldID][lvID].fUnits[i].moveState = 0;
 
-			level[lvID].fUnits[i].clearPastPlaces();
+			level[wrldID][lvID].fUnits[i].clearPastPlaces();
 		};
 
-		for (int i = 0; i < level[lvID].getEUnitsAm(); i++) {
-			level[lvID].eUnits[i].setAttackState(0);
+		for (int i = 0; i < level[wrldID][lvID].getEUnitsAm(); i++) {
+			level[wrldID][lvID].eUnits[i].attackState = 0;
 
-			level[lvID].eUnits[i].setMoveState(0);
-			level[lvID].eUnits[i].setMoveCycle(0);
+			level[wrldID][lvID].eUnits[i].moveState = 0;
 		};
 	}
 
 	void Game::MouseDown(int button) {
 
-		//------------------------------- clean up this part btw -------------------------------//
+		if (inGame) {
 
-		//button to transition between move and attack phase
-		if (mouseLocated(770, 450, 830, 500)) {
-			turnState++;
+			if (mouseLocated(goBackBtn.x, goBackBtn.y, goBackBtn.getX2(), goBackBtn.getY2())) {
 
-			//sets AItimer so the AI always moves at the exact same time after the player's turn has ended
-			if (turnState >= 2) {
-				AItimer = 61;
+				level[wrldID][lvID].set(levelBackup);
+				resetUnits();
+				turnState = 0;
+				worldSelect = 100;
+
+				inGame = false;
 			}
-		}
 
-		//cancels attacking phase
-		if (mouseLocated(270, 450, 330, 500) && level[lvID].getAreAttacking() == true) {
-			memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
-			for (int t = 0; t < level[lvID].getFUnitsAm(); t++) {
-				level[lvID].fUnits[t].setAttackState(0);
+
+			//------------------------------- clean up this part btw -------------------------------//
+
+			//button to transition between move and attack phase
+			if (mouseLocated(770, 450, 830, 500)) {
+				turnState++;
+
+				//sets AItimer so the AI always moves at the exact same time after the player's turn has ended
+				if (turnState >= 2) {
+					AItimer = 61;
+				}
 			}
-		}
 
-		//--------------------------------------------------------------------------------------//
+			//cancels attacking phase
+			if (mouseLocated(270, 450, 330, 500) && level[wrldID][lvID].areAttacking == true) {
+				memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
+				for (int t = 0; t < level[wrldID][lvID].getFUnitsAm(); t++) {
+					level[wrldID][lvID].fUnits[t].attackState = 0;
+				}
+			}
+
+			//--------------------------------------------------------------------------------------//
 
 
 
-		switch (turnState) {
-		case 0:
+			switch (turnState) {
+			case 0:
 
-			//move friendly units
-			moveUnits(level[lvID].fUnits, level[lvID].eUnits, selected, level[lvID].getFUnitsAm(), level[lvID].getEUnitsAm());
-
-			break;
-		case 1:
-			Objective * eObjtvPointer;
-			eObjtvPointer = &level[lvID].eObjtv;
-
-			//attack with friendly units
-			attackUnits(level[lvID].fUnits, level[lvID].eUnits, selected, level[lvID].getFUnitsAm(), level[lvID].getEUnitsAm(), eObjtvPointer);
-
-			break;
-			/*
-			case 2:
-
-				//move enemy units <-- add AI to do this instead
-				moveUnits(level[lvID].eUnits, level[lvID].fUnits, selected, level[lvID].getEUnitsAm(), level[lvID].getFUnitsAm());
+				//move friendly units
+				moveUnits(level[wrldID][lvID].fUnits, level[wrldID][lvID].eUnits, selected, level[wrldID][lvID].getFUnitsAm(), level[wrldID][lvID].getEUnitsAm());
 
 				break;
-			case 3:
-				Objective * fObjtvPointer;
-				fObjtvPointer = &level[lvID].fObjtv;
+			case 1:
+				Objective * eObjtvPointer;
+				eObjtvPointer = &level[wrldID][lvID].eObjtv;
 
-				//attack with enemy units <-- add AI to do this instead
-				attackUnits(level[lvID].eUnits, level[lvID].fUnits, selected, level[lvID].getEUnitsAm(), level[lvID].getFUnitsAm(), fObjtvPointer);
+				//attack with friendly units
+				attackUnits(level[wrldID][lvID].fUnits, level[wrldID][lvID].eUnits, selected, level[wrldID][lvID].getFUnitsAm(), level[wrldID][lvID].getEUnitsAm(), eObjtvPointer);
 
 				break;
-				*/
+				/*
+				case 2:
+
+					//move enemy units <-- add AI to do this instead
+					moveUnits(level[lvID].eUnits, level[lvID].fUnits, selected, level[lvID].getEUnitsAm(), level[lvID].getFUnitsAm());
+
+					break;
+				case 3:
+					Objective * fObjtvPointer;
+					fObjtvPointer = &level[lvID].fObjtv;
+
+					//attack with enemy units <-- add AI to do this instead
+					attackUnits(level[lvID].eUnits, level[lvID].fUnits, selected, level[lvID].getEUnitsAm(), level[lvID].getFUnitsAm(), fObjtvPointer);
+
+					break;
+					*/
+			}
+		}
+		else {
+			if (worldSelect == 100) {
+
+				if (mouseLocated(goBackBtn.x, goBackBtn.y, goBackBtn.getX2(), goBackBtn.getY2())) {
+					exit(0);
+				}
+
+				for (int t = 0; t < sizeof(worldSelectBtns) / sizeof(worldSelectBtns[0]); t++) {
+
+					if (mouseLocated(worldSelectBtns[t].x, worldSelectBtns[t].y, worldSelectBtns[t].getX2(), worldSelectBtns[t].getY2())) {
+						worldSelect = t;
+					}
+					//screen->Box(worldSelectBtns[t].getX(), worldSelectBtns[t].getY(), worldSelectBtns[t].getX2(), worldSelectBtns[t].getY2(), 0x000000);
+				}
+			}
+			else {
+
+				if (mouseLocated(goBackBtn.x, goBackBtn.y, goBackBtn.getX2(), goBackBtn.getY2())) {
+					worldSelect = 100;
+				}
+				else {
+					for (int t = 0; t < 4; t++) {
+
+						if (mouseLocated(levelSelectBtns[worldSelect][t].x, levelSelectBtns[worldSelect][t].y, levelSelectBtns[worldSelect][t].getX2(), levelSelectBtns[worldSelect][t].getY2())) {
+							if (worldSelect == 0) {
+								if (t - 1 < 0) {
+									lvID = t;
+									wrldID = worldSelect;
+									levelBackup.set(level[wrldID][lvID]);
+									level[wrldID][lvID].set(levelBackup);
+									inGame = true;
+								}
+								else if (level[worldSelect][t - 1].completed) {
+									lvID = t;
+									wrldID = worldSelect;
+									levelBackup.set(level[wrldID][lvID]);
+									level[wrldID][lvID].set(levelBackup);
+									inGame = true;
+								}
+								else
+								{
+									printf("You can't access this level yet!\n");
+								}
+							}
+							else {
+								if (level[worldSelect - 1][5].completed) {
+									if (t - 1 < 0) {
+										lvID = t;
+										wrldID = worldSelect;
+										levelBackup.set(level[wrldID][lvID]);
+										level[wrldID][lvID].set(levelBackup);
+										inGame = true;
+									}
+									else if (level[worldSelect][t - 1].completed) {
+										lvID = t;
+										wrldID = worldSelect;
+										levelBackup.set(level[wrldID][lvID]);
+										level[wrldID][lvID].set(levelBackup);
+										inGame = true;
+									}
+									else
+									{
+										printf("You can't access this level yet!\n");
+									}
+								}
+								else
+								{
+									printf("You can't access this level yet!\n");
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	};
 
 	void Game::KeyDown(int key) {
 
-		resetUnits();
-
-		switch (key) {
-		case 80: if (lvID - 1 >= 0) {
-			level[lvID].set(levelBackup);
-			lvID--;
-		}
-			   break;
-		case 79: if (lvID + 1 < sizeof(level) / sizeof(level[0])) {
-			level[lvID].set(levelBackup);
-			lvID++;
-		}
-			   break;
-
+		if (key == 44) {
+			if (inGame) {
+				worldSelect = 100;
+				inGame = false;
+			}
+			else inGame = true;
 		}
 
-		//resets both attack and movement for all units
-		resetUnits();
-		memset(AIPMoves, 0, sizeof(AIPMoves));
-		turnState = 0;
-		pathToTake.resize(0);
+		if (inGame) {
 
-		levelBackup.set(level[lvID]);
+			resetUnits();
+
+			/*
+			switch (key) {
+			case 80: if (lvID - 1 >= 0) {
+				level[wrldID][lvID].set(levelBackup);
+				lvID--;
+			}
+				   break;
+
+			case 79: if (lvID + 1 < sizeof(level) / sizeof(level[0])) {
+				level[wrldID][lvID].set(levelBackup);
+				lvID++;
+			}
+				   break;
+			}
+			*/
+			//resets both attack and movement for all units
+
+			turnState = 0;
+			pathToTake.resize(0);
+
+			levelBackup.set(level[wrldID][lvID]);
+		}
+	}
+
+	//thx https://www.techiedelight.com/split-string-cpp-using-delimiter/
+	void tokenize(std::string const& str, const char delim,
+		std::vector<std::string>& out)
+	{
+		size_t start;
+		size_t end = 0;
+
+		while ((start = str.find_first_not_of(delim, end)) != std::string::npos)
+		{
+			end = str.find(delim, start);
+			out.push_back(str.substr(start, end - start));
+		}
 	}
 
 	void Game::Init() {
-		levelBackup.set(level[lvID]);
+		/*
+		int mapLayout[worldsX][worldsY];
+
+		ifstream levels;
+		levels.open("levels.dat", ios::in);
+
+		if (!levels) {
+			exit(1);
+		}
+
+		string nms;
+		*/
+		/*
+		for (int t = 0; t < worldsX; t++) {
+			for (int t2 = 0; t2 < worldsY; t2++) {
+				printf("%i ", mapLayout[t][t2]);
+			}
+			printf("\n");
+		}
+		*/
+
+		for (int wrldInd = 0; wrldInd < sizeof(level) / sizeof(level[0]); wrldInd++) {
+			for (int lvInd = 0; lvInd < sizeof(level[wrldInd]) / sizeof(level[wrldInd][0]); lvInd++) {
+
+				/*
+				//printf("%i\n", (lvInd + (wrldInd * 6)) * 9);
+				int cycle = 0, startLoc = 0;
+
+				printf("level: %i\n", (lvInd + (wrldInd * 6)));
+
+				while (!levels.eof()) {
+					while (getline(levels, nms)) { //read data from file object and put it into string.
+						//if (startLoc >= (lvInd + (wrldInd * 6)) * 9 && startLoc < ((lvInd + (wrldInd * 6)) * 9) + 9) {
+
+							printf("StartLoc: %i, Cycle: %i\n", startLoc, cycle);
+							nms = nms.c_str();
+
+							std::vector<std::string> out;
+							tokenize(nms.c_str(), ',', out);
+
+							for (int t = 0; t < out.size(); t++) {
+
+								int temp = stoi(out[t].c_str());
+
+								//mapLayout[cycle][t] = temp;
+							}
+
+							//printf("%i\n", cycle);
+
+							cycle++;
+						} else { cycle = 0; };
+
+						startLoc++;
+					}
+				}
+				*/
+				
+				level[wrldInd][lvInd].set(GameState({8, 2} ,{4, 0, 7}, {4, 8, 7}, &worldField[wrldInd][lvInd][0][0], fUnits[wrldInd][lvInd], eUnits[wrldInd][lvInd], sizeof(fUnits[0][0]) / sizeof(fUnits[0][0][0]), sizeof(fUnits[0][0]) / sizeof(fUnits[0][0][0])));
+			}
+		}
+
+		levelBackup.set(level[wrldID][lvID]);
+		//levels.close();
 	}
 
 
 	void Game::Shutdown() {
-		delete tiles;
 		delete colTile;
+		delete defaultAnt;
 	}
 
 	bool onMap(coords c) {
 		//checks if given coordinates are on teh map
-		return (c.x < level[lvID].getWorld().x && c.x >= 0 && c.y < level[lvID].getWorld().y && c.y >= 0);
+		return (c.x < worldsX && c.x >= 0 && c.y < worldsY && c.y >= 0);
 	}
 
 	int getDist(coords c1, coords c2) {
@@ -459,8 +950,8 @@ namespace Tmpl8
 
 		//now this! This is how you calculate distance.
 
-		for (int x = 0; x < level[lvID].getWorld().x; x++) {
-			for (int y = 0; y < level[lvID].getWorld().y; y++) {
+		for (int x = 0; x < worldsX; x++) {
+			for (int y = 0; y < worldsY; y++) {
 				distanceMap[x][y] = 20000; //couldn't use memset for some reason :(
 			}
 		}
@@ -473,9 +964,9 @@ namespace Tmpl8
 		//if it does, it sets all neighbouring tiles to 'it + 1'
 		//doing this, the next time it loops, those are the tiles that are selected, and the process repeats itself until a complete map of all the units on the field is formed.
 
-		for (int it = 0; it < (level[lvID].getWorld().x + level[lvID].getWorld().y) ; it++) {
-			for (int x = 0; x < level[lvID].getWorld().x; x++) {
-				for (int y = 0; y < level[lvID].getWorld().y; y++) {
+		for (int it = 0; it < (worldsX + worldsY) ; it++) {
+			for (int x = 0; x < worldsX; x++) {
+				for (int y = 0; y < worldsY; y++) {
 
 					if (distanceMap[x][y] == it) {
 
@@ -512,19 +1003,19 @@ namespace Tmpl8
 	int AIattack(Unit* unit, coords selected, int x, int y) {
 		//gets threatened fields for attacking units
 
-		if (selected.x == unit->getX() && selected.y < unit->getY()) {
+		if (selected.x == unit->x && selected.y < unit->y) {
 
 			return unit->returnAttackArray(selected, x, y);
 		}
-		else if (selected.x == unit->getX() && selected.y > unit->getY()) {
+		else if (selected.x == unit->x && selected.y > unit->y) {
 
 			return unit->returnAttackArray(selected, x, y);
 		}
-		else if (selected.x < unit->getX() && selected.y == unit->getY()) {
+		else if (selected.x < unit->x && selected.y == unit->y) {
 
 			return unit->returnAttackArray(selected, x, y);
 		}
-		else if (selected.x > unit->getX() && selected.y == unit->getY()) {
+		else if (selected.x > unit->x && selected.y == unit->y) {
 
 			return unit->returnAttackArray(selected, x, y);
 		} else return 0;
@@ -539,7 +1030,7 @@ namespace Tmpl8
 		switch (unit->getMvType()) {
 		case unitMovementType::GROUND:
 
-			if (level[lvID].getWorldField(x, y) == 0 && level[lvID].getUnitPlacement(x, y) == 0) {
+			if (level[wrldID][lvID].getWorldField(x, y) == 0 && level[wrldID][lvID].getUnitPlacement(x, y) == 0) {
 
 				return true;
 			}
@@ -548,7 +1039,7 @@ namespace Tmpl8
 			break;
 		case unitMovementType::NAVAL:
 
-			if (level[lvID].getWorldField(x, y) == 2 && level[lvID].getUnitPlacement(x, y) == 0) {
+			if (level[wrldID][lvID].getWorldField(x, y) == 2 && level[wrldID][lvID].getUnitPlacement(x, y) == 0) {
 
 				return true;
 			}
@@ -557,7 +1048,7 @@ namespace Tmpl8
 			break;
 		case unitMovementType::AERIAL:
 
-			if (level[lvID].getUnitPlacement(x, y) == 0) {
+			if (level[wrldID][lvID].getUnitPlacement(x, y) == 0) {
 
 				return true;
 			}
@@ -574,13 +1065,16 @@ namespace Tmpl8
 	}
 
 
-	bool findPath(Unit* unit, coords startLoc, coords dest, int maxMoves = (level[lvID].getWorld().x * level[lvID].getWorld().y)) {
+	bool findPath(Unit* unit, coords startLoc, coords dest, int maxMoves = (worldsX * worldsY)) {
 
 		std::vector<std::vector<coords>> possiblePaths(1, std::vector<coords>(1, {startLoc.x, startLoc.y}));
+
+		memset(scannedAreas, 0, sizeof(scannedAreas));
+
 		scannedAreas[startLoc.x][startLoc.y] = 1;
 
 		//possiblePaths[0][0] = { startLoc.x, startLoc.y };
-
+		
 		int it = 1;
 		
 		//how this works; the game checks for tiles with where scannedAreas isn't 0; if it finds one, it checks all neighbouring tiles where scannedAreas is 0.
@@ -595,14 +1089,17 @@ namespace Tmpl8
 			pathToTake.resize(0);
 
 			pathToTake.push_back({startLoc.x, startLoc.y});
+
 			return true;
 		}
 		
 		do {
+			
+
 			int size = possiblePaths.size();
 
-			for (int x = 0; x < level[lvID].getWorld().x; x++) {
-				for (int y = 0; y < level[lvID].getWorld().y; y++) {
+			for (int x = 0; x < worldsX; x++) {
+				for (int y = 0; y < worldsY; y++) {
 
 					if (scannedAreas[x][y] == it && onMap({ x, y })) { //if the scannedareas equals it, so this iteration of this loop, and this tile is actually on the map, scan its neighbouring tiles
 					
@@ -652,7 +1149,7 @@ namespace Tmpl8
 	
 	int getAttackMap(Unit* unit, coords c) {
 
-		int AIThreatenedPlaces[9][9] = { 0 }; //map of all places threatened by AI
+		int AIThreatenedPlaces[worldsX][worldsY] = { 0 }; //map of all places threatened by AI
 
 		//creates a map of all the spots on the map the unit could possibly attack 
 
@@ -662,20 +1159,20 @@ namespace Tmpl8
 		for (int dir = 0; dir < 4; dir++) {
 
 			//for every spot on the map
-			for (int x = 0; x < level[lvID].getWorld().x; x++) {
-				for (int y = 0; y < level[lvID].getWorld().y; y++) {
+			for (int x = 0; x < worldsX; x++) {
+				for (int y = 0; y < worldsY; y++) {
 
 					//max movement range gets checked
 					if (findPath(unit, xy, { x, y }, unit->getSpeed())) {
 
-						unit->setX(x);  //sets unit location to every square on the field
-						unit->setY(y);  //I had to move the unit itself instead of evaluating different coordinates -not that I didn't try, it just didn't work. Too bad!
+						unit->x = x;  //sets unit location to every square on the field
+						unit->y = (y);  //I had to move the unit itself instead of evaluating different coordinates -not that I didn't try, it just didn't work. Too bad!
 
 						//gets threat array for that current location in every direction
 						returnThreatArray(unit, unit->getCoords().add(directions[dir]), threatenedPlaces);
 
-						for (int x1 = 0; x1 < level[lvID].getWorld().x; x1++) {
-							for (int y1 = 0; y1 < level[lvID].getWorld().y; y1++) {
+						for (int x1 = 0; x1 < worldsX; x1++) {
+							for (int y1 = 0; y1 < worldsY; y1++) {
 								if (AIThreatenedPlaces[x1][y1] == 0) {
 									AIThreatenedPlaces[x1][y1] = threatenedPlaces[x1][y1];
 								}
@@ -700,19 +1197,17 @@ namespace Tmpl8
 		//printf("Y: %i\n", target->getY());
 		coords xy = unit->getCoords(); //saves unit's location
 
-		
-
 		//for every spot on the map
-		for (int x = 0; x < level[lvID].getWorld().x; x++) {
-			for (int y = 0; y < level[lvID].getWorld().y; y++) {
+		for (int x = 0; x < worldsX; x++) {
+			for (int y = 0; y < worldsY; y++) {
 
 				//max movement range gets checked
 				if (findPath(unit, xy, { x, y }, unit->getSpeed())) {
 
 					//checks all 4 directions
 					for (int dir = 0; dir < 4; dir++) {
-						unit->setX(x);  //sets unit location to every square on the field
-						unit->setY(y);  //I had to move the unit itself instead of evaluating different coordinates -not that I didn't try, it just didn't work. Too bad!
+						unit->x = x;  //sets unit location to every square on the field
+						unit->y = y;  //I had to move the unit itself instead of evaluating different coordinates -not that I didn't try, it just didn't work. Too bad!
 
 						//gets threat array for that current location in every direction
 						returnThreatArray(unit, unit->getCoords().add(directions[dir]), threatenedPlaces);
@@ -725,7 +1220,7 @@ namespace Tmpl8
 							switch (unit->getMvType()) {
 							case unitMovementType::GROUND:
 
-								if (level[lvID].getWorldField(x, y) == 0) {
+								if (level[wrldID][lvID].getWorldField(x, y) == 0) {
 
 									AIPMoves[x][y] = 1;
 								}
@@ -733,7 +1228,7 @@ namespace Tmpl8
 								break;
 							case unitMovementType::NAVAL:
 
-								if (level[lvID].getWorldField(x, y) == 2) {
+								if (level[wrldID][lvID].getWorldField(x, y) == 2) {
 
 									AIPMoves[x][y] = 1;
 								}
@@ -772,54 +1267,57 @@ namespace Tmpl8
 		*/
 	}
 
+	std::vector<coords> destinations(level[wrldID][lvID].getEUnitsAm());
+
 	coords getTarget(int uIndex) {
 
 		//--------------------------------------------//
 		//											  //
 		// Priority Shopping List:					  //
-		//											  //											
+		//											  //
 		// 1. attack units threatening objective	  //
-		//											  // 
+		//											  //
 		// 2. attack units threatening you			  //
-		//											  // 
+		//											  //
 		// 3. attack enemy objective if in range	  //
 		//											  //
 		// 4. attack closest by						  //
 		//											  //
 		//--------------------------------------------//
 
-		int am = level[lvID].getFUnitsAm();
+		destinations.resize(level[wrldID][lvID].getEUnitsAm());
+		int am = level[wrldID][lvID].getFUnitsAm();
 		std::vector<int> priority(am);
 		int distance = 20000;
 
 		Unit target;
-		target.set(Unit(-1, -1, 0, 0, 0, unitType::MELEE, unitMovementType::GROUND));
+		target.set(Unit(-1, -1, 0, 0, unitType::MELEE, unitMovementType::GROUND));
 		bool isBeingAttacked = false;
 
 		//AIPossibleMoves();
 
-		for (int t = 0; t < level[lvID].getFUnitsAm(); t++) {
-			if (level[lvID].fUnits[t].getHealth() > 0) {
+		for (int t = 0; t < level[wrldID][lvID].getFUnitsAm(); t++) {
+			if (level[wrldID][lvID].fUnits[t].isAlive()) {
 
 
 				priority[t] = 0;
 				//getDist(level[lvID].fUnits[t].getCoords(), level[lvID].eObjtv.getCoords()) <=
-				if ((AIattack(&level[lvID].fUnits[t], level[lvID].eObjtv.getCoords(), level[lvID].eObjtv.getX(), level[lvID].eObjtv.getY()) == 1 && getDist(level[lvID].fUnits[t].getCoords(), level[lvID].eUnits[uIndex].getCoords()) <= level[lvID].fUnits[t].getSpeed()) || getDist(level[lvID].fUnits[t].getCoords(), level[lvID].eObjtv.getCoords()) <= 3) {
+				if ((AIattack(&level[wrldID][lvID].fUnits[t], level[wrldID][lvID].eObjtv.getCoords(), level[wrldID][lvID].eObjtv.x, level[wrldID][lvID].eObjtv.y) == 1 && getDist(level[wrldID][lvID].fUnits[t].getCoords(), level[wrldID][lvID].eUnits[uIndex].getCoords()) <= level[wrldID][lvID].fUnits[t].getSpeed()) || getDist(level[wrldID][lvID].fUnits[t].getCoords(), level[wrldID][lvID].eObjtv.getCoords()) <= 3) {
 
 					priority[t] = 6;
 
 				}
-				else if (AIattack(&level[lvID].fUnits[t], level[lvID].eUnits[uIndex].getCoords(), level[lvID].eUnits[uIndex].getX(), level[lvID].eUnits[uIndex].getY()) == 1) { //checks if unit is being attacked
+				else if (AIattack(&level[wrldID][lvID].fUnits[t], level[wrldID][lvID].eUnits[uIndex].getCoords(), level[wrldID][lvID].eUnits[uIndex].x, level[wrldID][lvID].eUnits[uIndex].y) == 1) { //checks if unit is being attacked
 
 					priority[t] = 5;
 					isBeingAttacked = true;
 
 				}
-				else if (!isBeingAttacked && getAttackMap(&level[lvID].eUnits[uIndex], level[lvID].fObjtv.getCoords())) {
+				else if (!isBeingAttacked && getAttackMap(&level[wrldID][lvID].eUnits[uIndex], level[wrldID][lvID].fObjtv.getCoords())) {
 
 					//printf("%i\n", level[lvID].fObjtv.getX());
 					//printf("%i\n", level[lvID].fObjtv.getY());
-					return level[lvID].fObjtv.getCoords();
+					return level[wrldID][lvID].fObjtv.getCoords();
 
 				}
 			}
@@ -829,11 +1327,11 @@ namespace Tmpl8
 		int temp = 0;
 		bool allZero = true;
 
-		
 
-		for (int t = 0; t < level[lvID].getFUnitsAm(); t++) {
 
-			if (level[lvID].fUnits[t].getHealth() > 0) {
+		for (int t = 0; t < level[wrldID][lvID].getFUnitsAm(); t++) {
+
+			if (level[wrldID][lvID].fUnits[t].isAlive()) {
 
 				if (priority[t] != 0) { //test if all enemies have priority of 0
 					allZero = false; 
@@ -841,306 +1339,370 @@ namespace Tmpl8
 
 				if (priority[t] == temp) {
 
-					if (getDist(level[lvID].eUnits[uIndex].getCoords(), level[lvID].fUnits[t].getCoords()) <= dist) {
+					if (getDist(level[wrldID][lvID].eUnits[uIndex].getCoords(), level[wrldID][lvID].fUnits[t].getCoords()) <= dist) {
 
-						dist = getDist(level[lvID].eUnits[uIndex].getCoords(), level[lvID].fUnits[t].getCoords());
+						dist = getDist(level[wrldID][lvID].eUnits[uIndex].getCoords(), level[wrldID][lvID].fUnits[t].getCoords());
 
-						target.set(level[lvID].fUnits[t]);
+						target.set(level[wrldID][lvID].fUnits[t]);
 						temp = priority[t];
 					}
 
 				} else if (priority[t] > temp) {
 
 					temp = priority[t];
-					target.set(level[lvID].fUnits[t]);
+					target.set(level[wrldID][lvID].fUnits[t]);
 				}
 			}
 		}
 		
+		//if all friendly units have a priority of 0; attack the closest one
 		if (allZero) {
 
-			int objDist = getDist(level[lvID].eUnits[uIndex].getCoords(), level[lvID].fObjtv.getCoords());
-			coords tempCoords = level[lvID].fObjtv.getCoords();
+			int objDist = getDist(level[wrldID][lvID].eUnits[uIndex].getCoords(), level[wrldID][lvID].fObjtv.getCoords());
+			coords tempCoords = level[wrldID][lvID].fObjtv.getCoords();
 
-			for (int t = 0; t < level[lvID].getFUnitsAm(); t++) {
-				if (level[lvID].fUnits[t].getHealth() > 0) {
-					if (objDist > getDist(level[lvID].eUnits[uIndex].getCoords(), level[lvID].fUnits[t].getCoords())) {
+			for (int t = 0; t < level[wrldID][lvID].getFUnitsAm(); t++) {
+				if (level[wrldID][lvID].fUnits[t].isAlive()) {
+					if (objDist > getDist(level[wrldID][lvID].eUnits[uIndex].getCoords(), level[wrldID][lvID].fUnits[t].getCoords())) {
 
-						objDist = getDist(level[lvID].eUnits[uIndex].getCoords(), level[lvID].fUnits[t].getCoords());
-						tempCoords.set(level[lvID].fUnits[t].getX(), level[lvID].fUnits[t].getY());
+						objDist = getDist(level[wrldID][lvID].eUnits[uIndex].getCoords(), level[wrldID][lvID].fUnits[t].getCoords());
+						tempCoords.set(level[wrldID][lvID].fUnits[t].x, level[wrldID][lvID].fUnits[t].y);
 					}
 				}
 			}
-
+			destinations[uIndex].set(tempCoords.x, tempCoords.y);
 			return tempCoords;
 		}
-		
+		destinations[uIndex].set(target.x, target.y);
 		return target.getCoords();
 	}
 
-	std::vector<coords> destinations(level[lvID].getFUnitsAm());
+	
 	bool AIMoving = false;
 
 	void AIstsep(int turnSt, int uIndex) { //no need to pass a pointer to eUnits; AI will only address enemy units anyways --a shame, otherwise we could have AI vs AI battles :(
 	
+		//destinations.resize(level[lvID].getEUnitsAm());
 		resetUnits();
 
 		if (turnSt == 2) {
 
-			printf("Movement phase\n");
+			setDistanceMap(level[wrldID][lvID].eUnits[uIndex].getCoords());
 
-			setDistanceMap(level[lvID].eUnits[uIndex].getCoords());
-			
-
-			coords loc;
-			loc.set(getTarget(uIndex).x, getTarget(uIndex).y);
+			coords loc = getTarget(uIndex);
 
 			int closestDistance = 20000;
 			coords closestField;
+			bool NoAIPMoves = true;
 
 				//get target
 				//get all tiles that can attack target
 				//get closest tile to attack target with
 				//find path to this closest tile
 
-			AIPossibleMoves(&level[lvID].eUnits[uIndex], loc);
+			AIPossibleMoves(&level[wrldID][lvID].eUnits[uIndex], loc);
 			closestField.set(loc.x, loc.y);
 
-			for (int x = 0; x < level[lvID].getWorld().x; x++) {
-				for (int y = 0; y < level[lvID].getWorld().y; y++) {
+			//get closest tile in AIPMoves
+			for (int x = 0; x < worldsX; x++) {
+				for (int y = 0; y < worldsY; y++) {
 
 					if (AIPMoves[x][y] == 1) {
-						if (closestDistance >= getDist(level[lvID].eUnits[uIndex].getCoords(), { x, y })) {
-							closestDistance = getDist(level[lvID].eUnits[uIndex].getCoords(), { x, y });
+						if (closestDistance >= getDist(level[wrldID][lvID].eUnits[uIndex].getCoords(), { x, y })) {
+							closestDistance = getDist(level[wrldID][lvID].eUnits[uIndex].getCoords(), { x, y });
 
+							closestField.set(x, y);
+							NoAIPMoves = false;
+						}
+					}
+				}
+			}
+
+			//if AIPMoves contains no possible tiles; find closest tile to target.
+			closestDistance = 20000;
+			if (NoAIPMoves) {
+				for (int x = 0; x < worldsX; x++) {
+					for (int y = 0; y < worldsY; y++) {
+						if (findPath(&level[wrldID][lvID].eUnits[uIndex], level[wrldID][lvID].eUnits[uIndex].getCoords(), { x, y }, level[wrldID][lvID].eUnits[uIndex].getSpeed()) && closestDistance >= getDist({x, y}, loc)) {
+							
+							closestDistance = getDist({ x, y }, loc);
 							closestField.set(x, y);
 						}
 					}
 				}
 			}
 
-			printf("u X: %i\n", level[lvID].eUnits[uIndex].getX());
-			printf("u Y: %i\n", level[lvID].eUnits[uIndex].getY());
-
-			printf("cl X: %i\n", closestField.x);
-			printf("cl Y: %i\n", closestField.y);
-
-
-			//fix one last problem here;
-			//if units out of range, focus them
-
-
-			//findPath(&level[lvID].eUnits[uIndex], level[lvID].eUnits[uIndex].getCoords(), closestField);
-			findPath(&level[lvID].eUnits[uIndex], level[lvID].eUnits[uIndex].getCoords(), closestField);
-
-			for (int t = 0; t < pathToTake.size(); t++) {
-				printf("----------------------\n");
-				printf("X: %i\n", pathToTake[t].x);
-				printf("Y: %i\n", pathToTake[t].y);
-			}
+			//destinations[uIndex].set(closestField.x, closestField.y);
+			findPath(&level[wrldID][lvID].eUnits[uIndex], level[wrldID][lvID].eUnits[uIndex].getCoords(), closestField);
 
 			AIMoving = true;
 			AItimer = 0;
+
 		}
 		else {
-			printf("Cringe phase\n");
-		
+
+			level[wrldID][lvID].eUnits[uIndex].attackState = 1;
+			returnThreatArray(&level[wrldID][lvID].eUnits[uIndex], destinations[uIndex], threatenedPlaces);
+			attackUnits(level[wrldID][lvID].eUnits, level[wrldID][lvID].fUnits, destinations[uIndex], level[wrldID][lvID].getEUnitsAm(), level[wrldID][lvID].getFUnitsAm(), &level[wrldID][lvID].fObjtv);
 		} 
 	}
 
 
 	void Game::Tick(float deltaTime)
 	{
-		screen->Clear(0x59d6ce);
+		//printf("%i\n", level[wrldID][lvID].fObjtv.getHealth());
 
-		int fUnitsAm = 0, eUnitsAm = 0;
-		//marks where the units are on the field
-		for (int i = 0; i < level[lvID].getFUnitsAm(); i++) {
-			level[lvID].setUnitPlacement(level[lvID].fUnits[i].getX(), level[lvID].fUnits[i].getY(), 1);
-		}
-
-		for (int i = 0; i < level[lvID].getEUnitsAm(); i++) {
-			level[lvID].setUnitPlacement(level[lvID].eUnits[i].getX(), level[lvID].eUnits[i].getY(), 1);
-		}
-
-		level[lvID].setUnitPlacement(level[lvID].eObjtv.getX(), level[lvID].eObjtv.getY(), 1);
-		level[lvID].setUnitPlacement(level[lvID].fObjtv.getX(), level[lvID].fObjtv.getY(), 1);
-
-		if (turnState < 2) {
-			setDistanceMap(selectedUnit);
-		}
-
-		//printf("TurnState: %i\n", turnState);
-
-		//activates x times per second -- 60 fps / amount of frames per interval = interval per second
+		//printf("%s", level[wrldID][lvID].winloss() ? "true" : "false");
+		//system("CLS");
+		//printf("X: %i Y: %i\n", mousePos.x, mousePos.y);
 		
-		if (AItimer % 60 == 0 && !AIMoving) {
-			if (turnState >= 2) {
 
-				if (AIstep < level[lvID].getEUnitsAm()) {
-
-					if (level[lvID].eUnits[AIstep].getHealth() > 0) {
-						
-
-						AIstsep(turnState, AIstep);
-					}
-
-					AIstep++;
-				}
-				else {
-					if (turnState + 1 == 4) {
-						turnState = 0;
-						AIstep = 0;
-					}
-					else {
-						turnState++;
-						AIstep = 0;
-					}
-				}
-			}
-			AItimer = 0;
-		}
-
-		if (AItimer % 20 == 0 && AIMoving) {
-			if (turnState == 2) {
-				if (moveStep < pathToTake.size()) {
-
-					//printf("%s\n", AIMoving ? "True" : "False");
-					
-					level[lvID].eUnits[AIstep - 1].setCoords(pathToTake[moveStep]);
-
-					moveStep++;
-				}
-				else {
-
-					AIMoving = false;
-					moveStep = 0;
-					AItimer = 0;
-				}
-			}
-		}
-		AItimer++;
-
-		//draws turn button
-		switch (turnState) {
-		case 0: screen->Bar(770, 450, 830, 500, 0x0000ff);
-			break;
-		case 1: screen->Bar(770, 450, 830, 500, 0xff0000);
-			break;
-		}
+		screen->Clear(0xffffff);
 
 		mousePos = getMousePosInt();
 
-		currentCell = { mousePos.x / tileSize.x, mousePos.y / tileSize.y };
+		if (inGame) {
 
-		offset = { mousePos.x % tileSize.x, mousePos.y % tileSize.y };
+			button.SetFrame(goBackBtn.type);
+			button.Draw(screen, goBackBtn.x, goBackBtn.y);
+			//screen->Box(goBackBtn.x, goBackBtn.y, goBackBtn.getX2(), goBackBtn.getY2(), 0x000000);
 
-		selected = {
-			(currentCell.y - level[lvID].getOrigin().y) + (currentCell.x - level[lvID].getOrigin().x),
-			(currentCell.y - level[lvID].getOrigin().y) - (currentCell.x - level[lvID].getOrigin().x)
-		};
-
-		Pixel* col = colTile->GetBuffer() + offset.x + offset.y * tileSize.x;
-
-		//see if cursor hovers right outside of tile
-		//kinda disgusting with the +256, -256 but hey ho gets the job done
-		if (*col == -256) selected.x += 1;
-		if (*col == -(0xff0000 + 256)) selected.y -= 1;
-		if (*col == -(0x00ff00 + 256)) selected.x -= 1;
-		if (*col == -(0xffff00 + 1)) selected.y += 1;
-
-		//transform selected coords into screen px
-		selectedWorldPx = toScreen(selected.x, selected.y);
-
-		//generate map with loop
-		for (int x = 0; x < level[lvID].getWorld().x; x++) {
-			for (int y = 0; y < level[lvID].getWorld().y; y++) {
-
-				coords vWorld = toScreen(x, y);
-
-				//draws tiles
-				switch (level[lvID].getWorldField(x, y)) {
-				case 0: draw(0, 0, screen, tiles, vWorld.x, vWorld.y, 64, 128, tileSize.y, tileSize.x);
-					break;
-				case 1: draw(1, 1, screen, tiles, vWorld.x, vWorld.y, 64, 128, tileSize.y, tileSize.x);
-					break;
-				case 2: draw(0, 1, screen, tiles, vWorld.x, vWorld.y, 64, 128, tileSize.y, tileSize.x);
-					break;
+			//marks where the units are on the field
+			for (int i = 0; i < level[wrldID][lvID].getFUnitsAm(); i++) {
+				if (level[wrldID][lvID].fUnits[i].isAlive()) {
+					level[wrldID][lvID].setUnitPlacement(level[wrldID][lvID].fUnits[i].x, level[wrldID][lvID].fUnits[i].y, 1);
 				}
+				else {
+					level[wrldID][lvID].setUnitPlacement(level[wrldID][lvID].fUnits[i].x, level[wrldID][lvID].fUnits[i].y, 0);
+				} 
+			}
 
-				//draws friendly units
-				drawUnits(screen, level[lvID].fUnits, level[lvID].getFUnitsAm(), x, y);  //this function could probably be optimised; let's save it for later ;-)
-
-				//draws enemy units
-				drawUnits(screen, level[lvID].eUnits, level[lvID].getEUnitsAm(), x, y);
-
-				//draws objectives for both teams
-				drawObjectives(level[lvID].fObjtv, screen, x, y);
-				drawObjectives(level[lvID].eObjtv, screen, x, y);
-
-				//draws selected tile
-				if (selected.x == x && selected.y == y) {
-					draw(1, 0, screen, tiles, selectedWorldPx.x, selectedWorldPx.y, 64, 128, tileSize.y, tileSize.x);
+			for (int i = 0; i < level[wrldID][lvID].getEUnitsAm(); i++) {
+				if (level[wrldID][lvID].eUnits[i].isAlive()) {
+					level[wrldID][lvID].setUnitPlacement(level[wrldID][lvID].eUnits[i].x, level[wrldID][lvID].eUnits[i].y, 1);
 				}
-
-				if (turnState != 2 && threatenedPlaces[x][y] == 1) {
-					draw(1, 0, screen, tiles, vWorld.x, vWorld.y, 64, 128, tileSize.y, tileSize.x);
+				else {
+					level[wrldID][lvID].setUnitPlacement(level[wrldID][lvID].eUnits[i].x, level[wrldID][lvID].eUnits[i].y, 0);
 				}
+			}
 
-				/*
-				if (AIPMoves[x][y] == 1) {
-					draw(1, 0, screen, tiles, vWorld.x, vWorld.y, 64, 128, tileSize.y, tileSize.x);
-				}
-				*/
-				/*
-				for (int t = 0; t < pathToTake.size(); t++) {
-					if (pathToTake[t].equals({x, y})) {
-						draw(1, 0, screen, tiles, vWorld.x, vWorld.y, 64, 128, tileSize.y, tileSize.x);
+			level[wrldID][lvID].setUnitPlacement(level[wrldID][lvID].eObjtv.x, level[wrldID][lvID].eObjtv.y, 1);
+			level[wrldID][lvID].setUnitPlacement(level[wrldID][lvID].fObjtv.x, level[wrldID][lvID].fObjtv.y, 1);
+
+			if (turnState < 2) {
+				setDistanceMap(selectedUnit);
+			}
+
+			//printf("TurnState: %i\n", turnState);
+
+			//activates x times per second -- 60 fps / amount of frames per interval = interval per second
+
+			if (AItimer % 60 == 0 && !AIMoving) {
+				if (turnState >= 2) {
+
+					resetUnits();
+
+					if (AIstep < level[wrldID][lvID].getEUnitsAm()) {
+
+						if (level[wrldID][lvID].eUnits[AIstep].isAlive()) {
+
+							AIstsep(turnState, AIstep);
+						}
+						else {
+							AItimer = 59;
+						}
+
+						AIstep++;
+					}
+					else {
+						if (turnState + 1 == 4) {
+							turnState = 0;
+						}
+						else {
+							turnState++;
+						}
+						AIstep = 0;
 					}
 				}
-				*/
+				AItimer = 0;
+			}
 
-				//generates square indicators of where unit can move to
-				for (int t = 0; t < level[lvID].getFUnitsAm(); t++) {
-					if (level[lvID].fUnits[t].getMoveState() == 1) {
-						//draws path unit has taken this turn
-						for (int t1 = 0; t1 < level[lvID].fUnits[t].getSpeed(); t1++) {
-							if (level[lvID].fUnits[t].getPastPlaces(t1).x == x && level[lvID].fUnits[t].getPastPlaces(t1).y == y && level[lvID].fUnits[t].getMoveState() == 1) {
-								draw(0, 1, screen, tiles, vWorld.x, vWorld.y, 64, 128, tileSize.y, tileSize.x);
+			if (AItimer % 10 == 0 && AIMoving) {
+				if (turnState == 2) {
+					if (moveStep < pathToTake.size()) {
+
+						//printf("%s\n", AIMoving ? "True" : "False");
+
+						level[wrldID][lvID].eUnits[AIstep - 1].setCoords(pathToTake[moveStep]);
+
+						moveStep++;
+					}
+					else {
+
+						AIMoving = false;;
+						moveStep = 0;
+						AItimer = 0;
+					}
+				}
+			}
+			AItimer++;
+
+			//draws turn button
+			switch (turnState) {
+			case 0: screen->Bar(770, 450, 830, 500, 0x0000ff);
+				break;
+			case 1: screen->Bar(770, 450, 830, 500, 0xff0000);
+				break;
+			}
+
+			currentCell = { mousePos.x / tileSize.x, mousePos.y / tileSize.y };
+
+			offset = { mousePos.x % tileSize.x, mousePos.y % tileSize.y };
+
+			selected = {
+				(currentCell.y - level[wrldID][lvID].getOrigin().y) + (currentCell.x - level[wrldID][lvID].getOrigin().x),
+				(currentCell.y - level[wrldID][lvID].getOrigin().y) - (currentCell.x - level[wrldID][lvID].getOrigin().x)
+			};
+
+			Pixel* col = colTile->GetBuffer() + offset.x + offset.y * tileSize.x;
+
+			//see if cursor hovers right outside of tile
+			//kinda disgusting with the +256, -256 but hey ho gets the job done
+			if (*col == -256) selected.x += 1;
+			if (*col == -(0xff0000 + 256)) selected.y -= 1;
+			if (*col == -(0x00ff00 + 256)) selected.x -= 1;
+			if (*col == -(0xffff00 + 1)) selected.y += 1;
+
+			//transform selected coords into screen px
+			selectedWorldPx = toScreen(selected.x, selected.y);
+
+			//selectTileS.DrawScaled(40, 20, 64, 48, screen);
+
+			//generate map with loop
+			for (int x = 0; x < worldsX; x++) {
+				for (int y = 0; y < worldsY; y++) {
+
+					coords vWorld = toScreen(x, y);
+
+					//draws tiles
+					switch (level[wrldID][lvID].getWorldField(x, y)) {
+					case 0:
+						groundTiles.SetFrame(0);
+						groundTiles.Draw(screen, vWorld.x, vWorld.y);
+
+						break;
+					case 1:
+						groundTiles.SetFrame(1);
+						groundTiles.Draw(screen, vWorld.x, vWorld.y);
+
+						break;
+					case 2:
+						groundTiles.SetFrame(2);
+						groundTiles.Draw(screen, vWorld.x, vWorld.y);
+
+						break;
+					}
+
+					//generates square indicators of where unit can move to
+					for (int t = 0; t < level[wrldID][lvID].getFUnitsAm(); t++) {
+						if (level[wrldID][lvID].fUnits[t].moveState == 1) {
+							//draws path unit has taken this turn
+							for (int t1 = 0; t1 < level[wrldID][lvID].fUnits[t].getSpeed(); t1++) {
+								if (level[wrldID][lvID].fUnits[t].getPastPlaces(t1).x == x && level[wrldID][lvID].fUnits[t].getPastPlaces(t1).y == y && level[wrldID][lvID].fUnits[t].moveState == 1) {
+									//draw(1, 0, screen, tiles, vWorld.x, vWorld.y, tileSize.y + 32, tileSize.x * 3, tileSize.y + 32, tileSize.x);
+									pathTile.DrawScaled(vWorld.x, vWorld.y, 64, 48, screen);
+								}
 							}
+
+							//draws fields unit can directly move to
+							if (distanceMap[x][y] <= 1 && level[wrldID][lvID].fUnits[t].moveState == 1 && canMoveHere(&level[wrldID][lvID].fUnits[t], x, y)) {
+
+								selectTileS.DrawScaled(vWorld.x, vWorld.y, 64, 48, screen);
+							}
+
+							level[wrldID][lvID].setUnitPlacement(x, y, 0);
 						}
+					}
 
-						//draws fields unit can directly move to
-						if (distanceMap[x][y] <= 1 && level[lvID].fUnits[t].getMoveState() == 1 && canMoveHere(&level[lvID].fUnits[t], x, y)) {
+					//draws selected tile
+					if (selected.x == x && selected.y == y) {
+						//draw(0, 0, screen, selectTile, selectedWorldPx.x, selectedWorldPx.y, tileSize.y, tileSize.x, tileSize.y, tileSize.x);
+						selectTileS.DrawScaled(selectedWorldPx.x, selectedWorldPx.y, 64, 48, screen);
+					}
 
-							draw(1, 0, screen, tiles, vWorld.x, vWorld.y, 64, 128, tileSize.y, tileSize.x);
-						}
-
-						level[lvID].setUnitPlacement(x, y, 0);
+					if (turnState != 2 && threatenedPlaces[x][y] == 1) {
+						selectTileS.DrawScaled(vWorld.x, vWorld.y, 64, 48, screen);
 					}
 				}
+			}
 
-				for (int t = 0; t < level[lvID].getEUnitsAm(); t++) {
-					if (distanceMap[x][y] == 1 && level[lvID].eUnits[t].getMoveState() == 1) {
+			for (int x = 0; x < worldsX; x++) {
+				for (int y = 0; y < worldsY; y++) {
+					if (level[wrldID][lvID].getWorldField(x, y) == 1) {
 
-						draw(1, 0, screen, tiles, vWorld.x, vWorld.y, 64, 128, tileSize.y, tileSize.x);
+						coords vWorld = toScreen(x, y);
+
+						Mountain.DrawScaled(vWorld.x, vWorld.y - 20, 64, 64, screen);
 					}
-					level[lvID].setUnitPlacement(x, y, 0);
+				}
+			}
+
+			//draws friendly units
+			drawUnits(screen, level[wrldID][lvID].fUnits, level[wrldID][lvID].getFUnitsAm());
+
+			//draws enemy units
+			drawUnits(screen, level[wrldID][lvID].eUnits, level[wrldID][lvID].getEUnitsAm());
+
+			//draws objectives for both teams
+			drawObjectives(level[wrldID][lvID].fObjtv, screen, &antHill);
+			drawObjectives(level[wrldID][lvID].eObjtv, screen, &antHill);
+		}
+		else {
+			
+			//add menu here
+
+			//screen->Box(300, 300, 350, 350, 0x000000);
+
+			
+
+			if (worldSelect == 100) {
+
+				planetSelect.DrawScaled(0, 0, ScreenWidth, ScreenHeight, screen);
+
+				button.SetFrame(9);
+				button.Draw(screen, goBackBtn.x, goBackBtn.y);
+
+				//menu.Draw(screen, 0, 0);
+			}
+			else {
+
+				switch (worldSelect) {
+				case 0: planet0.DrawScaled(0, 0, ScreenWidth, ScreenHeight, screen);
+					break; 
+				case 1: planet1.DrawScaled(0, 0, ScreenWidth, ScreenHeight, screen);
+					break; 
+				case 2: planet2.DrawScaled(0, 0, ScreenWidth, ScreenHeight, screen);
+					break;
+				case 3: planet3.DrawScaled(0, 0, ScreenWidth, ScreenHeight, screen);
+					break;
+				}
+				
+
+				//screen->Box(goBackBtn.x, goBackBtn.y, goBackBtn.getX2(), goBackBtn.getY2(), 0x000000);
+				button.SetFrame(goBackBtn.type);
+				button.Draw(screen, goBackBtn.x, goBackBtn.y);
+				
+				for (int t = 0; t < sizeof(levelSelectBtns[worldSelect]) / sizeof(levelSelectBtns[worldSelect][0]); t++) {
+					
+					//printf("%i\n", levelSelectBtns[worldSelect][1].getX2());
+					//screen->Box(levelSelectBtns[worldSelect][t].x, levelSelectBtns[worldSelect][t].y, levelSelectBtns[worldSelect][t].getX2(), levelSelectBtns[worldSelect][t].getY2(), 0x000000);
+
+					button.SetFrame(levelSelectBtns[worldSelect][t].type);
+					button.Draw(screen, levelSelectBtns[worldSelect][t].x, levelSelectBtns[worldSelect][t].y);
 				}
 			}
 		}
 
-		level[lvID].setCanMove(false);
-		for (int i = 0; i < level[lvID].getFUnitsAm(); i++) {
-			if (!level[lvID].fUnits[i].getIsMoving()) {
-				level[lvID].setCanMove(true);
-			}
-		};
-
-		for (int i = 0; i < level[lvID].getEUnitsAm(); i++) {
-			if (!level[lvID].eUnits[i].getIsMoving()) {
-				level[lvID].setCanMove(true);
-			}
-		};
+		antCEO.DrawScaled(600, 0, 384, 648, screen);
 	}
 };
