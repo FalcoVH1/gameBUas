@@ -496,7 +496,7 @@ public:
 		return enemyUnitsAm;
 	}
 };
-
+/*
 class sentence
 {
 private: 
@@ -545,7 +545,7 @@ public:
 		index = 0;
 	}
 };
-
+*/
 class Game
 {
 private:

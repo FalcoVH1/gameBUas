@@ -65,11 +65,11 @@ namespace Tmpl8
 	coords mousePos(0, 0), currentCell(0, 0), offset(0, 0), selected(0, 0), selectedWorldPx(0, 0), selectedUnit(0, 0);
 
 	static const coords tileSize(64, 48);
-
+	/*
 	dialogue dLog(
 		std::vector<sentence>(2, sentence("cringe", dPerson::ANT))
 	);
-
+	*/
 	static const coords directions[4] = {
 		coords(0, 1),
 		coords(0, -1),
@@ -1657,7 +1657,7 @@ namespace Tmpl8
 			//antCEO.Draw(screen, 700 + moveTimer, 30);
 			//dialogue.Draw(screen, 50 + moveTimer, 600);
 
-			dLog.showD(screen);
+			//dLog.showD(screen);
 		}
 	}
 };
