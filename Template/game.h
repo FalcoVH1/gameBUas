@@ -3,17 +3,25 @@
 #include "template.h"
 #include "surface.h"
 #include <stdio.h>
+#include <string>
 #include <string.h>
 
 namespace Tmpl8 {
 
 class Surface;
 
+static Sprite antCEO(new Surface("assets/antCEO.png"), 1);
+static Sprite dialogueSpr(new Surface("assets/dialogue.png"), 1);
+
 enum class unitDirection { NORTH, EAST, SOUTH, WEST };
 	
 enum class unitType { MORTAR, RANGED, MELEE };
 
 enum class unitMovementType { GROUND, NAVAL, AERIAL };
+
+enum class levelState { COMPLETED, STARTED, INACCESSIBLE };
+
+enum class dPerson { ANT, GNRL };
 
 const int worldsX = 9, worldsY = 9;
 
@@ -350,7 +358,8 @@ public:
 	Objective eObjtv = { 0, 0, 0 };
 	Objective fObjtv = { 0, 0, 0 };
 
-	bool areAttacking = false, completed = false;
+	bool areAttacking = false;
+	levelState lvState = levelState::INACCESSIBLE;
 
 	//initializerlist was used so we can use coords and objective in the constructor class
 
@@ -488,6 +497,55 @@ public:
 	}
 };
 
+class sentence
+{
+private: 
+	std::string text;
+	dPerson person;
+public:
+	sentence(std::string Text, dPerson DP) {
+		text = Text;
+		person = DP;
+	}
+
+	sentence() = default;
+
+	void show(Surface* screen) {
+		antCEO.Draw(screen, 700, 30);
+		dialogueSpr.Draw(screen, 50, 600);
+
+		char* char_array;
+		std::string str_obj(text);
+		char_array = &str_obj[0];
+
+		screen->Print(char_array, 70, 630, 0xffffff);
+	}
+};
+
+class dialogue
+{
+private:
+	std::vector<sentence> dlog;
+	unsigned int index = 0;
+public: 
+	dialogue(std::vector<sentence> dialogues) {
+		dlog.resize(dialogues.size());
+		dlog = dialogues;
+	}
+
+	void showD(Surface* screen) {
+		if (index < dlog.size()) dlog[index].show(screen);
+	}
+
+	void addToIndex() {
+		if (index + 1 < dlog.size()) index++;
+	}
+
+	void nullifyIndex() {
+		index = 0;
+	}
+};
+
 class Game
 {
 private:
@@ -516,7 +574,4 @@ public:
 		};
 	};
 };
-
-
-
 }; // namespace Tmpl8

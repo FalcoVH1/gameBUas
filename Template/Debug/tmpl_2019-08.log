@@ -1,2 +1,47 @@
-﻿  surface.cpp
-  tmpl_2019-08.vcxproj -> D:\projectBUAS\Template\tmpl_2019-08_x86_debug.exe
+﻿  game.cpp
+D:\projectBUAS\Template\game.h(528,7): error C2039: 'vector': is not a member of 'std'
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.23.28105\include\string(20): message : see declaration of 'std'
+D:\projectBUAS\Template\game.h(528,13): error C2143: syntax error: missing ';' before '<'
+D:\projectBUAS\Template\game.h(528,13): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+D:\projectBUAS\Template\game.h(528,28): error C2238: unexpected token(s) preceding ';'
+D:\projectBUAS\Template\game.h(531,16): error C2039: 'vector': is not a member of 'std'
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.23.28105\include\string(20): message : see declaration of 'std'
+D:\projectBUAS\Template\game.h(531,44): error C2061: syntax error: identifier 'vector'
+D:\projectBUAS\Template\game.h(532,3): error C2065: 'dlog': undeclared identifier
+D:\projectBUAS\Template\game.h(532,15): error C2065: 'dialogues': undeclared identifier
+D:\projectBUAS\Template\game.h(533,3): error C2065: 'dlog': undeclared identifier
+D:\projectBUAS\Template\game.h(533,10): error C2065: 'dialogues': undeclared identifier
+D:\projectBUAS\Template\game.h(537,15): error C2065: 'dlog': undeclared identifier
+D:\projectBUAS\Template\game.h(537,28): error C2065: 'dlog': undeclared identifier
+D:\projectBUAS\Template\game.h(541,19): error C2065: 'dlog': undeclared identifier
+D:\projectBUAS\Template\game.cpp(69,15): error C2664: 'Tmpl8::dialogue::dialogue(Tmpl8::dialogue &&)': cannot convert argument 1 from 'std::vector<Tmpl8::sentence,std::allocator<_Ty>>' to 'const Tmpl8::dialogue &'
+D:\projectBUAS\Template\game.cpp(69,15): error C2664:         with
+D:\projectBUAS\Template\game.cpp(69,15): error C2664:         [
+D:\projectBUAS\Template\game.cpp(69,15): error C2664:             _Ty=Tmpl8::sentence
+D:\projectBUAS\Template\game.cpp(69,15): error C2664:         ]
+D:\projectBUAS\Template\game.cpp(71,3): message : Reason: cannot convert from 'std::vector<Tmpl8::sentence,std::allocator<_Ty>>' to 'const Tmpl8::dialogue'
+D:\projectBUAS\Template\game.cpp(71,3): message :         with
+D:\projectBUAS\Template\game.cpp(71,3): message :         [
+D:\projectBUAS\Template\game.cpp(71,3): message :             _Ty=Tmpl8::sentence
+D:\projectBUAS\Template\game.cpp(71,3): message :         ]
+D:\projectBUAS\Template\game.cpp(70,24): message : No user-defined-conversion operator available that can perform this conversion, or the operator cannot be called
+D:\projectBUAS\Template\game.h(547,1): message : see declaration of 'Tmpl8::dialogue::dialogue'
+D:\projectBUAS\Template\game.cpp(1059,31): warning C4018: '<': signed/unsigned mismatch
+  template.cpp
+D:\projectBUAS\Template\game.cpp(1475,19): warning C4018: '<': signed/unsigned mismatch
+D:\projectBUAS\Template\game.h(528,7): error C2039: 'vector': is not a member of 'std'
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.23.28105\include\string(20): message : see declaration of 'std'
+D:\projectBUAS\Template\game.h(528,13): error C2143: syntax error: missing ';' before '<'
+D:\projectBUAS\Template\game.h(528,13): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+D:\projectBUAS\Template\game.h(528,28): error C2238: unexpected token(s) preceding ';'
+D:\projectBUAS\Template\game.h(531,16): error C2039: 'vector': is not a member of 'std'
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.23.28105\include\string(20): message : see declaration of 'std'
+D:\projectBUAS\Template\game.h(531,44): error C2061: syntax error: identifier 'vector'
+D:\projectBUAS\Template\game.h(532,3): error C2065: 'dlog': undeclared identifier
+D:\projectBUAS\Template\game.h(532,15): error C2065: 'dialogues': undeclared identifier
+D:\projectBUAS\Template\game.h(533,3): error C2065: 'dlog': undeclared identifier
+D:\projectBUAS\Template\game.h(533,10): error C2065: 'dialogues': undeclared identifier
+D:\projectBUAS\Template\game.h(537,15): error C2065: 'dlog': undeclared identifier
+D:\projectBUAS\Template\game.h(537,28): error C2065: 'dlog': undeclared identifier
+  Generating Code...
+D:\projectBUAS\Template\game.h(541,19): error C2065: 'dlog': undeclared identifier

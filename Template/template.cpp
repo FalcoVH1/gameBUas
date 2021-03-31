@@ -26,6 +26,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+//future me, look into advancedGL pls B)
+
 #ifdef ADVANCEDGL
 #define GLEW_BUILD
 extern "C"
@@ -257,12 +259,17 @@ bool init()
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();
 	glEnable( GL_TEXTURE_2D );
+
+	glEnable(GL_BLEND);
+
 	glShadeModel( GL_SMOOTH );
 	if (!createFBtexture()) return false;
 	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 	glClear( GL_COLOR_BUFFER_BIT );
 	glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
+
+
 	if (wglSwapIntervalEXT) wglSwapIntervalEXT( 0 );
 	surface = new Surface( ScreenWidth, ScreenHeight, 0, ScreenWidth );
 	return true;
@@ -300,6 +307,7 @@ void swap()
 
 int main( int argc, char **argv ) 
 {  
+	//SDL_SetHintWithPriority(SDL_HINT_RENDER_VSYNC, "0", SDL_HINT_OVERRIDE);
 #ifdef _MSC_VER
     if (!redirectIO())
         return 1;
@@ -314,7 +322,7 @@ int main( int argc, char **argv )
 #endif
 	SDL_GLContext glContext = SDL_GL_CreateContext( window);
 	init();
-	ShowCursor( false );
+	ShowCursor( true );
 #else
 #ifdef FULLSCREEN
 	window = SDL_CreateWindow(TemplateVersion, 100, 100, ScreenWidth, ScreenHeight, SDL_WINDOW_FULLSCREEN );

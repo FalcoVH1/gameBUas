@@ -6,9 +6,9 @@
 #include <windows.h>
 #include <math.h> 
 #include <string>
-#include <iostream>
+#include <cstring>
 #include <vector>
-#include <fstream>
+
 
 using namespace std;
 
@@ -34,48 +34,59 @@ namespace Tmpl8
 
 
 	 //Surface* tiles = new Surface("assets/defTiles.png");
-	Surface* colTile = new Surface("assets/specialTile.png");
+	Surface* colTile = new Surface("assets/inGame/specialTile.png");
 	//Surface* selectTile = new Surface("assets/selectTile.png");
-	Surface* defaultAnt = new Surface("assets/defaultAnt.png");
+	Surface* defaultAnt = new Surface("assets/inGame/defaultAnt.png");
 
-	Sprite planetSelect(new Surface("assets/menuScreen.png"), 1);
-	Sprite planet0(new Surface("assets/planet0.png"), 1);
-	Sprite planet1(new Surface("assets/planet1.png"), 1);
-	Sprite planet2(new Surface("assets/planet2.png"), 1);
-	Sprite planet3(new Surface("assets/planet3.png"), 1);
-	Sprite button(new Surface("assets/button.png"), 10);
+	static Sprite planetSelect(new Surface("assets/UI/menuScreen.png"), 1);
+	//Sprite planetSelect(new Surface("assets/menuScreen.bmp"), 1);
+	static Sprite planet0(new Surface("assets/UI/planet0.png"), 1);
+	static Sprite planet1(new Surface("assets/UI/planet1.png"), 1);
+	static Sprite planet2(new Surface("assets/UI/planet2.png"), 1);
+	static Sprite planet3(new Surface("assets/UI/planet3.png"), 1);
+	static Sprite button(new Surface("assets/UI/button.png"), 10);
 
-	Sprite selectTileS(new Surface("assets/selectTile.png"), 1);
-	Sprite pathTile(new Surface("assets/pathTile.png"), 1);
-	Sprite groundTiles(new Surface("assets/defTiles.png"), 3);
-	Sprite Mountain(new Surface("assets/mountain.png"), 1);
-	Sprite antHill(new Surface("assets/antsObj.png"), 1);
-	Sprite menu(new Surface("assets/menu.png"), 1);
+	static Sprite selectTileS(new Surface("assets/inGame/selectTile.png"), 1);
+	static Sprite pathTile(new Surface("assets/inGame/pathTile.png"), 1);
+	static Sprite groundTiles(new Surface("assets/inGame/defTiles.png"), 3);
+	static Sprite mountain(new Surface("assets/inGame/mountain.png"), 1);
+	static Sprite antHill(new Surface("assets/inGame/antsObj.png"), 1);
+	static Sprite unitInfo(new Surface("assets/UI/unitInfo.png"), 1);
+	static Sprite menuHeader(new Surface("assets/UI/menuHeader.png"), 1);
+	static Sprite phaseInd(new Surface("assets/UI/phaseInd.png"), 2);
 
-	Sprite antCEO(new Surface("assets/antCEO.png"), 1);
+
+
+	//Font nFont("assets/font.ttf", "abcdefghijklmnopqrstuvwxyz0123456789!?:=,.-() #'*/");
 
 	int AItimer = 0, AIstep = 0, turnState = 0, lvID = 0, wrldID = 0, moveStep = 0, worldSelect = 100, levelSelect = 100;
-	bool inGame = false;
+	bool inGame = false, inDialogue = false;
 
-	coords mousePos(0, 0), currentCell(0, 0), offset(0, 0), selected(0, 0), selectedUnit(0, 0), selectedWorldPx(0, 0), tileSize(64, 48);
+	coords mousePos(0, 0), currentCell(0, 0), offset(0, 0), selected(0, 0), selectedWorldPx(0, 0), selectedUnit(0, 0);
 
-	const coords directions[4] = {
+	static const coords tileSize(64, 48);
+
+	dialogue dLog(
+		std::vector<sentence>(2, sentence("cringe", dPerson::ANT))
+	);
+
+	static const coords directions[4] = {
 		coords(0, 1),
 		coords(0, -1),
 		coords(1, 0),
 		coords(-1, 0),
 	};
 
-	LevelButton goBackBtn(50, 50, 50, 50, 6);
+	LevelButton goBackBtn(20, 20, 50, 50, 6), continueBtn(845, 630, 50, 50, 8), cancelBtn(905, 630, 50, 50, 9);
 
-	Button worldSelectBtns[4] = {
+	static Button worldSelectBtns[4] = {
 		Button(110, 246, 120, 120),
 		Button(350, 422, 133, 133),
 		Button(648, 158, 238, 238),
 		Button(878, 468, 154, 154)
 	};
 
-	LevelButton levelSelectBtns[4][6] = {
+	static LevelButton levelSelectBtns[4][6] = {
 		LevelButton(90, 300, 50, 50, 0),
 		LevelButton(290, 260, 50, 50, 1),
 		LevelButton(480, 200, 50, 50, 2),
@@ -108,7 +119,6 @@ namespace Tmpl8
 	int distanceMap[worldsX][worldsY] = { 0 }; //map of the distance any object is from a selected unit
 	int threatenedPlaces[worldsX][worldsY] = { 0 }; //map of all places on the map which are threatened
 	int AIPMoves[worldsX][worldsY] = { 0 }; //places AI can move to
-	int scannedAreas[worldsX][worldsY] = { 0 };
 
 	int worldField[4][6][9][9] = {
 
@@ -366,6 +376,8 @@ namespace Tmpl8
 
 	}; //terrain map
 
+	Unit infoSelectedUnit;
+
 	Unit fUnits[4][6][3] = {
 		Unit(1, 7, 3, 15, unitType::RANGED, unitMovementType::AERIAL), Unit(4, 7, 3, 15, unitType::RANGED, unitMovementType::GROUND), Unit(7, 7, 3, 15, unitType::MORTAR, unitMovementType::NAVAL)
 	};
@@ -386,7 +398,7 @@ namespace Tmpl8
 	bool onMap(coords c);
 	bool canMoveHere(Unit* unit, int x, int y);
 	int getDist(coords c1, coords c2);
-	void resetUnits();
+	const void resetUnits();
 
 	void moveUnits(Unit* fUnits, Unit* eUnits, coords selectedC, int fUnitsAm, int eUnitsAm) {
 
@@ -485,25 +497,13 @@ namespace Tmpl8
 			resetUnits();
 			turnState = 0;
 			worldSelect = 100;
-			level[wrldID][lvID].completed = true;
-			
+			level[wrldID][lvID].lvState = levelState::COMPLETED;
+			if (lvID + 1 <= sizeof(level[wrldID]) / sizeof(level[wrldID][lvID])) level[wrldID][lvID + 1].lvState = levelState::STARTED;
+			else if (lvID + 1 == sizeof(level[wrldID]) / sizeof(level[wrldID][lvID]) && wrldID + 1 <= sizeof(level) / sizeof(level[wrldID])) level[wrldID + 1][0].lvState = levelState::STARTED;
 			inGame = false;
 		}
 		//level[wrldID][lvID].winloss();
 	}
-
-
-	void draw(int tx, int ty, Surface* screen, Surface* tiles, int x, int y, int tilemapH, int tilemapW, int tileH, int tileW)
-	{
-		//draws tiles lol
-		Pixel* src = tiles->GetBuffer() + tx * tileW + (ty * tileH) * tilemapW;
-		Pixel* dst = screen->GetBuffer() + x + y * ScreenWidth;
-		for (int i = 0; i < tileH; i++, src += tilemapW, dst += ScreenWidth)
-			for (int j = 0; j < tileW; j++)
-				if (src[j] != NULL) {
-					dst[j] = src[j];
-				}
-	};
 
 	//checks if cursor is located in between given coords
 	bool mouseLocated(int x1, int y1, int x2, int y2) {
@@ -536,6 +536,7 @@ namespace Tmpl8
 
 	//draws units
 	void drawUnits(Surface* screen, Unit* fUnits, int fUnitsAm) {
+		
 		for (int t = 0; t < fUnitsAm; t++) {
 
 			//kills land units if they somehow arrive on water
@@ -573,9 +574,19 @@ namespace Tmpl8
 				case unitMovementType::NAVAL: type = 2;
 					break;
 				}
-					
-				draw(dir, type, screen, defaultAnt, temp.x, temp.y - 14, 64, 64 * 4, 64, 64);
 
+
+				//wrote this code way back, decided to keep it. No reason in particular, it's just something neat that I wrote myself (somehow)
+				//draws tiles lol
+				Pixel* src = defaultAnt->GetBuffer() + dir * tileSize.x + (type * tileSize.x) * (64 * 4);
+				Pixel* dst = screen->GetBuffer() + temp.x + (temp.y - 14) * ScreenWidth;
+				for (int i = 0; i < tileSize.x; i++, src += (64 * 4), dst += ScreenWidth)
+					for (int j = 0; j < tileSize.x; j++)
+						if (src[j] != NULL) {
+							dst[j] = src[j];
+						}
+
+				
 
 				//gets the center of the movable-unit-circle thingy
 				if (fUnits[t].moveState == 1) {
@@ -587,7 +598,9 @@ namespace Tmpl8
 					level[wrldID][lvID].areAttacking = true;
 
 					//draws cancel attack button
-					screen->Bar(270, 450, 330, 500, 0x0000ff);
+					//screen->Bar(270, 450, 330, 500, 0x0000ff);
+					button.SetFrame(cancelBtn.type);
+					button.Draw(screen, cancelBtn.x, cancelBtn.y);
 
 					//gets threatened fields for attacking units
 					if (selected.x == fUnits[t].x && selected.y < fUnits[t].y) {
@@ -626,10 +639,9 @@ namespace Tmpl8
 		}
 	}
 
-	void resetUnits() {
+	const void resetUnits() {
 		memset(AIPMoves, 0, sizeof(AIPMoves));
 		memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
-		memset(scannedAreas, 0, sizeof(scannedAreas));
 		//pathToTake.resize(0);
 
 		for (int i = 0; i < level[wrldID][lvID].getFUnitsAm(); i++) {
@@ -649,7 +661,17 @@ namespace Tmpl8
 
 	void Game::MouseDown(int button) {
 
-		if (inGame) {
+		auto reset = [](int t) {
+			lvID = t;
+			wrldID = worldSelect;
+			levelBackup.set(level[wrldID][lvID]);
+			level[wrldID][lvID].set(levelBackup);
+			inGame = true;
+		};
+
+		if (selected.x >= worldsX || selected.x < 0 || selected.y >= worldsY || selected.y < 0) infoSelectedUnit.set({-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND});;
+		
+		if (inGame && !inDialogue) {
 
 			if (mouseLocated(goBackBtn.x, goBackBtn.y, goBackBtn.getX2(), goBackBtn.getY2())) {
 
@@ -665,7 +687,7 @@ namespace Tmpl8
 			//------------------------------- clean up this part btw -------------------------------//
 
 			//button to transition between move and attack phase
-			if (mouseLocated(770, 450, 830, 500)) {
+			if (mouseLocated(continueBtn.x, continueBtn.y, continueBtn.getX2(), continueBtn.getY2())) {
 				turnState++;
 
 				//sets AItimer so the AI always moves at the exact same time after the player's turn has ended
@@ -675,7 +697,7 @@ namespace Tmpl8
 			}
 
 			//cancels attacking phase
-			if (mouseLocated(270, 450, 330, 500) && level[wrldID][lvID].areAttacking == true) {
+			if (mouseLocated(cancelBtn.x, cancelBtn.y, cancelBtn.getX2(), cancelBtn.getY2()) && level[wrldID][lvID].areAttacking == true) {
 				memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
 				for (int t = 0; t < level[wrldID][lvID].getFUnitsAm(); t++) {
 					level[wrldID][lvID].fUnits[t].attackState = 0;
@@ -684,7 +706,12 @@ namespace Tmpl8
 
 			//--------------------------------------------------------------------------------------//
 
-
+			for (int i = 0; i < level[wrldID][lvID].getFUnitsAm(); i++) {
+				if (level[wrldID][lvID].fUnits[i].getCoords().equals(selected)) infoSelectedUnit.set(level[wrldID][lvID].fUnits[i]);
+			};
+			for (int i = 0; i < level[wrldID][lvID].getEUnitsAm(); i++) {
+				if (level[wrldID][lvID].eUnits[i].getCoords().equals(selected)) infoSelectedUnit.set(level[wrldID][lvID].eUnits[i]);
+			};
 
 			switch (turnState) {
 			case 0:
@@ -743,20 +770,12 @@ namespace Tmpl8
 					for (int t = 0; t < 4; t++) {
 
 						if (mouseLocated(levelSelectBtns[worldSelect][t].x, levelSelectBtns[worldSelect][t].y, levelSelectBtns[worldSelect][t].getX2(), levelSelectBtns[worldSelect][t].getY2())) {
-							if (worldSelect == 0) {
+							/*if (worldSelect == 0) {
 								if (t - 1 < 0) {
-									lvID = t;
-									wrldID = worldSelect;
-									levelBackup.set(level[wrldID][lvID]);
-									level[wrldID][lvID].set(levelBackup);
-									inGame = true;
+									reset(t);
 								}
 								else if (level[worldSelect][t - 1].completed) {
-									lvID = t;
-									wrldID = worldSelect;
-									levelBackup.set(level[wrldID][lvID]);
-									level[wrldID][lvID].set(levelBackup);
-									inGame = true;
+									reset(t);
 								}
 								else
 								{
@@ -766,18 +785,10 @@ namespace Tmpl8
 							else {
 								if (level[worldSelect - 1][5].completed) {
 									if (t - 1 < 0) {
-										lvID = t;
-										wrldID = worldSelect;
-										levelBackup.set(level[wrldID][lvID]);
-										level[wrldID][lvID].set(levelBackup);
-										inGame = true;
+										reset(t);
 									}
 									else if (level[worldSelect][t - 1].completed) {
-										lvID = t;
-										wrldID = worldSelect;
-										levelBackup.set(level[wrldID][lvID]);
-										level[wrldID][lvID].set(levelBackup);
-										inGame = true;
+										reset(t);
 									}
 									else
 									{
@@ -788,6 +799,10 @@ namespace Tmpl8
 								{
 									printf("You can't access this level yet!\n");
 								}
+							}*/
+
+							if (level[worldSelect][t].lvState != levelState::INACCESSIBLE) {
+								reset(t);
 							}
 						}
 					}
@@ -798,12 +813,14 @@ namespace Tmpl8
 
 	void Game::KeyDown(int key) {
 
+		/*
 		if (key == 44) {
-			if (inGame) {
-				worldSelect = 100;
-				inGame = false;
-			}
-			else inGame = true;
+			inGame ? worldSelect = 100, inGame = false : inGame = true;
+		}
+		*/
+
+		if (key == 44) {
+			inDialogue ? inDialogue = false : inDialogue = true;
 		}
 
 		if (inGame) {
@@ -835,6 +852,7 @@ namespace Tmpl8
 	}
 
 	//thx https://www.techiedelight.com/split-string-cpp-using-delimiter/
+	/*
 	void tokenize(std::string const& str, const char delim,
 		std::vector<std::string>& out)
 	{
@@ -847,70 +865,20 @@ namespace Tmpl8
 			out.push_back(str.substr(start, end - start));
 		}
 	}
-
+	*/
 	void Game::Init() {
-		/*
-		int mapLayout[worldsX][worldsY];
 
-		ifstream levels;
-		levels.open("levels.dat", ios::in);
 
-		if (!levels) {
-			exit(1);
-		}
-
-		string nms;
-		*/
-		/*
-		for (int t = 0; t < worldsX; t++) {
-			for (int t2 = 0; t2 < worldsY; t2++) {
-				printf("%i ", mapLayout[t][t2]);
-			}
-			printf("\n");
-		}
-		*/
 
 		for (int wrldInd = 0; wrldInd < sizeof(level) / sizeof(level[0]); wrldInd++) {
 			for (int lvInd = 0; lvInd < sizeof(level[wrldInd]) / sizeof(level[wrldInd][0]); lvInd++) {
 
-				/*
-				//printf("%i\n", (lvInd + (wrldInd * 6)) * 9);
-				int cycle = 0, startLoc = 0;
-
-				printf("level: %i\n", (lvInd + (wrldInd * 6)));
-
-				while (!levels.eof()) {
-					while (getline(levels, nms)) { //read data from file object and put it into string.
-						//if (startLoc >= (lvInd + (wrldInd * 6)) * 9 && startLoc < ((lvInd + (wrldInd * 6)) * 9) + 9) {
-
-							printf("StartLoc: %i, Cycle: %i\n", startLoc, cycle);
-							nms = nms.c_str();
-
-							std::vector<std::string> out;
-							tokenize(nms.c_str(), ',', out);
-
-							for (int t = 0; t < out.size(); t++) {
-
-								int temp = stoi(out[t].c_str());
-
-								//mapLayout[cycle][t] = temp;
-							}
-
-							//printf("%i\n", cycle);
-
-							cycle++;
-						} else { cycle = 0; };
-
-						startLoc++;
-					}
-				}
-				*/
-				
 				level[wrldInd][lvInd].set(GameState({8, 2} ,{4, 0, 7}, {4, 8, 7}, &worldField[wrldInd][lvInd][0][0], fUnits[wrldInd][lvInd], eUnits[wrldInd][lvInd], sizeof(fUnits[0][0]) / sizeof(fUnits[0][0][0]), sizeof(fUnits[0][0]) / sizeof(fUnits[0][0][0])));
 			}
 		}
 
 		levelBackup.set(level[wrldID][lvID]);
+		level[0][0].lvState = levelState::STARTED;
 		//levels.close();
 	}
 
@@ -1000,33 +968,10 @@ namespace Tmpl8
 
 	//-----------------------------------------------------  AI  -----------------------------------------------------//
 
-	int AIattack(Unit* unit, coords selected, int x, int y) {
-		//gets threatened fields for attacking units
-
-		if (selected.x == unit->x && selected.y < unit->y) {
-
-			return unit->returnAttackArray(selected, x, y);
-		}
-		else if (selected.x == unit->x && selected.y > unit->y) {
-
-			return unit->returnAttackArray(selected, x, y);
-		}
-		else if (selected.x < unit->x && selected.y == unit->y) {
-
-			return unit->returnAttackArray(selected, x, y);
-		}
-		else if (selected.x > unit->x && selected.y == unit->y) {
-
-			return unit->returnAttackArray(selected, x, y);
-		} else return 0;
-	}
-
-
 	bool canMoveHere(Unit* unit, int x, int y) {
 	
 		//checks if the unit can move to the given coords
 
-		
 		switch (unit->getMvType()) {
 		case unitMovementType::GROUND:
 
@@ -1068,8 +1013,7 @@ namespace Tmpl8
 	bool findPath(Unit* unit, coords startLoc, coords dest, int maxMoves = (worldsX * worldsY)) {
 
 		std::vector<std::vector<coords>> possiblePaths(1, std::vector<coords>(1, {startLoc.x, startLoc.y}));
-
-		memset(scannedAreas, 0, sizeof(scannedAreas));
+		int scannedAreas[worldsX][worldsY] = { 0 };
 
 		scannedAreas[startLoc.x][startLoc.y] = 1;
 
@@ -1120,7 +1064,7 @@ namespace Tmpl8
 								}
 
 								pathToTake.push_back( { x + directions[dir].x ,y + directions[dir].y } );
-								
+								possiblePaths.clear();
 								return true;
 
 							} else if (scannedAreas[x + directions[dir].x][y + directions[dir].y] == 0 && onMap({ (x + directions[dir].x), (y + directions[dir].y) }) && canMoveHere(unit, (x + directions[dir].x), (y + directions[dir].y))) {
@@ -1143,7 +1087,7 @@ namespace Tmpl8
 			it++;
 
 		} while (it <= maxMoves);
-
+		possiblePaths.clear();
 		return false;
 	}
 	
@@ -1249,27 +1193,34 @@ namespace Tmpl8
 		}
 
 		unit->setCoords(xy);
-		memset(scannedAreas, 0, sizeof(scannedAreas));
-		
-		/*
-		//disables AIPMoves if the unit can't actually move there with the pathfinding algorithm
-		for (int x = 0; x < level[lvID].getWorld().x; x++) {
-			for (int y = 0; y < level[lvID].getWorld().y; y++) {
-
-				if (AIPMoves[x][y] == 1) {
-
-					if (!findPath(unit, unit->getCoords(), { x, y }, unit->getSpeed())) {
-						AIPMoves[x][y] = 0;
-					}
-				}
-			}
-		}
-		*/
 	}
 
 	std::vector<coords> destinations(level[wrldID][lvID].getEUnitsAm());
 
 	coords getTarget(int uIndex) {
+
+		auto AIattack = [&](Unit* unit, coords selected, int x, int y) {
+			//gets threatened fields for attacking units
+
+			if (selected.x == unit->x && selected.y < unit->y) {
+
+				return unit->returnAttackArray(selected, x, y);
+			}
+			else if (selected.x == unit->x && selected.y > unit->y) {
+
+				return unit->returnAttackArray(selected, x, y);
+			}
+			else if (selected.x < unit->x && selected.y == unit->y) {
+
+				return unit->returnAttackArray(selected, x, y);
+			}
+			else if (selected.x > unit->x&& selected.y == unit->y) {
+
+				return unit->returnAttackArray(selected, x, y);
+			}
+			else return 0;
+		};
+
 
 		//--------------------------------------------//
 		//											  //
@@ -1301,7 +1252,6 @@ namespace Tmpl8
 
 
 				priority[t] = 0;
-				//getDist(level[lvID].fUnits[t].getCoords(), level[lvID].eObjtv.getCoords()) <=
 				if ((AIattack(&level[wrldID][lvID].fUnits[t], level[wrldID][lvID].eObjtv.getCoords(), level[wrldID][lvID].eObjtv.x, level[wrldID][lvID].eObjtv.y) == 1 && getDist(level[wrldID][lvID].fUnits[t].getCoords(), level[wrldID][lvID].eUnits[uIndex].getCoords()) <= level[wrldID][lvID].fUnits[t].getSpeed()) || getDist(level[wrldID][lvID].fUnits[t].getCoords(), level[wrldID][lvID].eObjtv.getCoords()) <= 3) {
 
 					priority[t] = 6;
@@ -1315,8 +1265,6 @@ namespace Tmpl8
 				}
 				else if (!isBeingAttacked && getAttackMap(&level[wrldID][lvID].eUnits[uIndex], level[wrldID][lvID].fObjtv.getCoords())) {
 
-					//printf("%i\n", level[lvID].fObjtv.getX());
-					//printf("%i\n", level[lvID].fObjtv.getY());
 					return level[wrldID][lvID].fObjtv.getCoords();
 
 				}
@@ -1326,8 +1274,6 @@ namespace Tmpl8
 		int dist = 20000;
 		int temp = 0;
 		bool allZero = true;
-
-
 
 		for (int t = 0; t < level[wrldID][lvID].getFUnitsAm(); t++) {
 
@@ -1447,24 +1393,23 @@ namespace Tmpl8
 		} 
 	}
 
-
 	void Game::Tick(float deltaTime)
 	{
-		//printf("%i\n", level[wrldID][lvID].fObjtv.getHealth());
-
-		//printf("%s", level[wrldID][lvID].winloss() ? "true" : "false");
-		//system("CLS");
-		//printf("X: %i Y: %i\n", mousePos.x, mousePos.y);
 		
-
-		screen->Clear(0xffffff);
-
+		screen->Clear(0);
 		mousePos = getMousePosInt();
 
 		if (inGame) {
 
+
+			menuHeader.Draw(screen, 0, 0);
 			button.SetFrame(goBackBtn.type);
 			button.Draw(screen, goBackBtn.x, goBackBtn.y);
+
+			turnState == 0 || turnState == 2 ? phaseInd.SetFrame(1) : phaseInd.SetFrame(0);
+
+			
+			phaseInd.Draw(screen, (ScreenWidth/2) - 251, 0);
 			//screen->Box(goBackBtn.x, goBackBtn.y, goBackBtn.getX2(), goBackBtn.getY2(), 0x000000);
 
 			//marks where the units are on the field
@@ -1492,8 +1437,6 @@ namespace Tmpl8
 			if (turnState < 2) {
 				setDistanceMap(selectedUnit);
 			}
-
-			//printf("TurnState: %i\n", turnState);
 
 			//activates x times per second -- 60 fps / amount of frames per interval = interval per second
 
@@ -1548,11 +1491,17 @@ namespace Tmpl8
 			AItimer++;
 
 			//draws turn button
-			switch (turnState) {
-			case 0: screen->Bar(770, 450, 830, 500, 0x0000ff);
-				break;
-			case 1: screen->Bar(770, 450, 830, 500, 0xff0000);
-				break;
+			unitInfo.Draw(screen, 845, 150);
+
+			/*
+			printf("%s", coordsStr);
+			char char_array[1000];
+			strcpy(char_array, coordsStr.c_str());
+			screen->Print(char_array, 865, 186, 0xffffff);
+			*/
+			if (turnState < 2) {
+				button.SetFrame(continueBtn.type);
+				button.Draw(screen, continueBtn.x, continueBtn.y);
 			}
 
 			currentCell = { mousePos.x / tileSize.x, mousePos.y / tileSize.y };
@@ -1642,7 +1591,7 @@ namespace Tmpl8
 
 						coords vWorld = toScreen(x, y);
 
-						Mountain.DrawScaled(vWorld.x, vWorld.y - 20, 64, 64, screen);
+						mountain.DrawScaled(vWorld.x, vWorld.y - 20, 64, 64, screen);
 					}
 				}
 			}
@@ -1658,16 +1607,16 @@ namespace Tmpl8
 			drawObjectives(level[wrldID][lvID].eObjtv, screen, &antHill);
 		}
 		else {
-			
+
 			//add menu here
-
 			//screen->Box(300, 300, 350, 350, 0x000000);
-
-			
 
 			if (worldSelect == 100) {
 
-				planetSelect.DrawScaled(0, 0, ScreenWidth, ScreenHeight, screen);
+				//memcpy(screen, planetSelect, sizeof(screen));
+				planetSelect.Draw(screen, 0, 0);
+
+				menuHeader.Draw(screen, 0, 0);
 
 				button.SetFrame(9);
 				button.Draw(screen, goBackBtn.x, goBackBtn.y);
@@ -1677,18 +1626,19 @@ namespace Tmpl8
 			else {
 
 				switch (worldSelect) {
-				case 0: planet0.DrawScaled(0, 0, ScreenWidth, ScreenHeight, screen);
+				case 0: planet0.Draw(screen, 0, 0);
 					break; 
-				case 1: planet1.DrawScaled(0, 0, ScreenWidth, ScreenHeight, screen);
+				case 1: planet1.Draw(screen, 0, 0);
 					break; 
-				case 2: planet2.DrawScaled(0, 0, ScreenWidth, ScreenHeight, screen);
+				case 2: planet2.Draw(screen, 0, 0);
 					break;
-				case 3: planet3.DrawScaled(0, 0, ScreenWidth, ScreenHeight, screen);
+				case 3: planet3.Draw(screen, 0, 0);
 					break;
 				}
 				
 
 				//screen->Box(goBackBtn.x, goBackBtn.y, goBackBtn.getX2(), goBackBtn.getY2(), 0x000000);
+				menuHeader.Draw(screen, 0, 0);
 				button.SetFrame(goBackBtn.type);
 				button.Draw(screen, goBackBtn.x, goBackBtn.y);
 				
@@ -1703,6 +1653,11 @@ namespace Tmpl8
 			}
 		}
 
-		antCEO.DrawScaled(600, 0, 384, 648, screen);
+		if (inDialogue) {
+			//antCEO.Draw(screen, 700 + moveTimer, 30);
+			//dialogue.Draw(screen, 50 + moveTimer, 600);
+
+			dLog.showD(screen);
+		}
 	}
 };

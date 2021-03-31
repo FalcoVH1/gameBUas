@@ -351,7 +351,7 @@ void Surface::InitCharset()
 	SetChar(46, "ooooo", "ooooo", "ooooo", "ooooo", "ooooo" );
 	SetChar(47, "::o::", "::o::", ":::::", ":::::", ":::::" ); // Tnx Ferry 
 	SetChar(48, "o:o:o", ":ooo:", "ooooo", ":ooo:", "o:o:o" );
-	SetChar(49, "::::o", ":::o:", "::o::", ":o:::", "o::::" ); // lol -Falco
+	SetChar(49, "::::o", ":::o:", "::o::", ":o:::", "o::::" );
 	char c[] = "abcdefghijklmnopqrstuvwxyz0123456789!?:=,.-() #'*/";
 	int i;
 	for ( i = 0; i < 256; i++ ) s_Transl[i] = 45;
@@ -451,13 +451,21 @@ void Sprite::Draw( Surface* a_Target, int a_X, int a_Y )
 
 void Sprite::DrawScaled( int a_X, int a_Y, int a_Width, int a_Height, Surface* a_Target )
 {
+
 	if ((a_Width == 0) || (a_Height == 0)) return;
-	for ( int x = 0; x < a_Width; x++ ) for ( int y = 0; y < a_Height; y++ )
+	for (int x = 0; x < a_Width; x++) for (int y = 0; y < a_Height; y++)
 	{
 		int u = (int)((float)x * ((float)m_Width / (float)a_Width));
 		int v = (int)((float)y * ((float)m_Height / (float)a_Height));
 		Pixel color = GetBuffer()[u + v * m_Pitch];
-		if (color & 0xffffff) a_Target->GetBuffer()[a_X + x + ((a_Y + y) * a_Target->GetPitch())] = color;
+
+
+		//so; I understand this; the colour gets overlayed with the binary value for white, resulting in any result but black being returned as something other than 0, black returning as 0
+		//what I don't get is how transparency works? The fast track mentions it as a 4th channel 
+
+		if (a_X + x >= 0 && a_X + x < ScreenWidth && ((a_Y + y) * a_Target->GetPitch()) >= 0 && (a_Y + y) < ScreenHeight) {
+			if (color & 0xffffff) a_Target->GetBuffer()[a_X + x + ((a_Y + y) * a_Target->GetPitch())] = color;
+		}
 	}
 }
 
