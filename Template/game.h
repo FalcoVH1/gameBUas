@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string>
 #include <string.h>
+#include <fstream>
 
 namespace Tmpl8 {
 
@@ -23,7 +24,7 @@ enum class levelState { COMPLETED, STARTED, INACCESSIBLE };
 
 enum class dPerson { ANT, GNRL };
 
-const int worldsX = 9, worldsY = 9;
+const int worldsX = 11, worldsY = 11;
 
 class Button {
 public:
@@ -318,8 +319,8 @@ public:
 		default: startVal = 1; endVal = 2;
 		}
 
-		//finds coordinates --should probably replace 9 here but doesn't matter for now
-		if ((x + diffX < 9 && x + diffX >= 0 && y + diffY < 9 && y + diffY >= 0)) {
+		//finds coordinates
+		if ((x + diffX < worldsX && x + diffX >= 0 && y + diffY < worldsY && y + diffY >= 0)) {
 
 			for (int t = startVal; t < endVal; t++) {
 				if (x + diffX * t == X && y + diffY * t == Y) {
@@ -331,7 +332,6 @@ public:
 	};
 };
 
-
 class GameState {
 private:
 	int friendlyUnitsAm = 0, enemyUnitsAm = 0;
@@ -341,7 +341,6 @@ private:
 	int unitPlacement[worldsX][worldsY] = { 0 }; //map of all current units
 	int worldField[worldsX][worldsY] = { 0 }; //terrain map
 
-	
 public: 
 
 	//---------------------IMPORTANT-NOTE---------------------//
@@ -350,7 +349,7 @@ public:
 	//std::vector would've been better. Too late now to change. 
 	//not that big a problem, it just limits levels to 9x9 squares.
 
-	//3 units max;
+	//3 units max; (again, std::vector would've been better)
 
 	Unit fUnits[3];
 	Unit eUnits[3];
@@ -363,20 +362,13 @@ public:
 
 	//initializerlist was used so we can use coords and objective in the constructor class
 
-	GameState(coords origin, Objective EOBJ, Objective FOBJ, int * arr, Unit * FUnits, Unit * EUnits, int fUnitsAm, int eUnitsAm) : 
+	GameState(coords origin, Objective EOBJ, Objective FOBJ, std::string path, Unit * FUnits, Unit * EUnits, int fUnitsAm, int eUnitsAm) : 
 		origin(origin.x, origin.y),
 		eObjtv( EOBJ.x, EOBJ.y, EOBJ.getHealth() ), 
 		fObjtv(FOBJ.x, FOBJ.y, FOBJ.getHealth()) {
 
 		friendlyUnitsAm = fUnitsAm;
 		enemyUnitsAm = eUnitsAm;
-
-		for (int x = 0; x < worldsX; x++) {
-			for (int y = 0; y < worldsY; y++) {
-				worldField[x][y] = *arr;
-				arr++;
-			}
-		}
 		
 		for (int t = 0; t < friendlyUnitsAm; t++) {
 			fUnits[t] = FUnits[t];
@@ -384,6 +376,19 @@ public:
 		for (int t = 0; t < enemyUnitsAm; t++) {
 			eUnits[t] = EUnits[t];
 		}
+
+		std::fstream mapFile;
+		mapFile.open(path);
+		char a;
+		for (int x = 0; x < worldsX; x++) {
+			for (int y = 0; y < worldsY; y++) {
+				mapFile.get(a);
+				worldField[x][y] = atoi(&a);
+				mapFile.ignore();
+			}
+		}
+
+		mapFile.close();
 	}
 
 	GameState() = default;
@@ -415,7 +420,6 @@ public:
 		fObjtv = gs.fObjtv;
 		eObjtv = gs.eObjtv;
 	}
-
 
 	bool winloss() {
 
