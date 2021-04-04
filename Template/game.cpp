@@ -380,7 +380,7 @@ namespace Tmpl8
 	Unit infoSelectedUnit;
 
 	Unit fUnits[4][6][3] = {
-		Unit(1, 7, -1, -15, unitType::RANGED, unitMovementType::AERIAL), Unit(7, 3, 3, 15, unitType::RANGED, unitMovementType::GROUND), Unit(7, 7, 3, 15, unitType::MORTAR, unitMovementType::NAVAL)
+		Unit(7, 5, 3, 15, unitType::RANGED, unitMovementType::AERIAL), Unit(7, 3, 3, 15, unitType::RANGED, unitMovementType::GROUND), Unit(7, 7, 3, 15, unitType::MORTAR, unitMovementType::NAVAL)
 	};
 
 	Unit eUnits[4][6][3] = {
@@ -435,6 +435,8 @@ namespace Tmpl8
 					//currently checks how far fields are away from unit, but this might have to change to accomodate for terrain, etc.
 
 					if (onMap(selectedC) && getDist(selectedC, fUnits[t].getCoords()) == 1.0 && !targetOccupied && canMoveHere(&fUnits[t], selectedC.x, selectedC.y)) {
+
+						printf("X: %i, Y: %i\n", selectedC.x, selectedC.y);
 
 						//-1 to getSpeed because the last square of movement gets done in the else- part of this statement
 						fUnits[t].move(selectedC);
@@ -1381,35 +1383,38 @@ namespace Tmpl8
 				closestField.set(targetedUnit.x, targetedUnit.y);
 			}
 
-			int cl = 20000;
-			coords newCoords;
-			if (!canMoveHere(&level[wrldID][lvID].eUnits[uIndex], closestField.x, closestField.y)) {
-				for (auto &dir : directions) {
+			if (!level[wrldID][lvID].eUnits[uIndex].getCoords().equals(closestField)) {
 
-					coords temp;
-					temp.set(closestField.add(dir).x, closestField.add(dir).y);
+				int cl = 20000;
+				coords newCoords;
+				if (!canMoveHere(&level[wrldID][lvID].eUnits[uIndex], closestField.x, closestField.y)) {
+					for (auto& dir : directions) {
 
-					if (canMoveHere(&level[wrldID][lvID].eUnits[uIndex], temp.x, temp.y) && getDist(temp, level[wrldID][lvID].eUnits[uIndex].getCoords()) < cl) {
-						
-						cl = getDist(temp, level[wrldID][lvID].eUnits[uIndex].getCoords());
-						newCoords.set(temp.x, temp.y);
+						coords temp;
+						temp.set(closestField.add(dir).x, closestField.add(dir).y);
+
+						if (canMoveHere(&level[wrldID][lvID].eUnits[uIndex], temp.x, temp.y) && getDist(temp, level[wrldID][lvID].eUnits[uIndex].getCoords()) < cl) {
+
+							cl = getDist(temp, level[wrldID][lvID].eUnits[uIndex].getCoords());
+							newCoords.set(temp.x, temp.y);
+						}
 					}
+
+					closestField.set(newCoords.x, newCoords.y);
 				}
 
-				closestField.set(newCoords.x, newCoords.y);
+				printf("x:%i, y:%i\n", closestField.x, closestField.y);
+
+
+				findPath(&level[wrldID][lvID].eUnits[uIndex], level[wrldID][lvID].eUnits[uIndex].getCoords(), closestField);
+
+				//}
+
+				printf("----------------------------\n");
+				for (auto& coord : pathToTake) {
+					printf("%i %i\n", coord.x, coord.y);
+				}
 			}
-
-			printf("x:%i, y:%i\n", closestField.x, closestField.y);
-
-			findPath(&level[wrldID][lvID].eUnits[uIndex], level[wrldID][lvID].eUnits[uIndex].getCoords(), closestField);
-
-			//}
-			
-			printf("----------------------------\n");
-			for (auto& coord : pathToTake) {
-				printf("%i %i\n", coord.x, coord.y);
-			}
-			
 
 			//destinations[uIndex].set(closestField.x, closestField.y);
 			
@@ -1431,6 +1436,20 @@ namespace Tmpl8
 		
 		screen->Clear(0);
 		mousePos = getMousePosInt();
+		
+		/*
+		for (int x = 0; x < worldsX; x++) {
+			for (int y = 0; y < worldsY; y++) {
+				printf("%i ", level[wrldID][lvID].getUnitPlacement(x, y));
+			}
+			printf("\n");
+		}
+
+		system("CLS");
+		*/
+
+
+		//printf("X:%i | Y: %i | %i\n", selected.x, selected.y, level[wrldID][lvID].getUnitPlacement(selected.x, selected.y));
 
 		if (inGame) {
 
