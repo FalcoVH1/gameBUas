@@ -22,9 +22,11 @@ enum class unitMovementType { GROUND, NAVAL, AERIAL };
 
 enum class levelState { COMPLETED, STARTED, INACCESSIBLE };
 
+enum class winloss { WON, LOSS, NA };
+
 enum class dPerson { ANT, GNRL };
 
-const int worldsX = 11, worldsY = 11;
+const int worldsX = 11, worldsY = 11, friendlyUnitsAm = 3, enemyUnitsAm = 3, worldsAm = 4, levelsPerWorld = 6;
 
 class Button {
 public:
@@ -125,6 +127,13 @@ public:
 		health = Health;
 	}
 
+	Objective() = default;
+
+	bool isAlive() {
+		if (health > 0) return true;
+		else return false;
+	}
+
 	void takeDamage(int damageValue) {
 		health -= damageValue;
 	}
@@ -135,6 +144,10 @@ public:
 
 	coords getCoords() {
 		return {x, y};
+	}
+
+	void setHealth(int h) {
+		health = h;
 	}
 };
 
@@ -149,7 +162,7 @@ private:
 
 		unitType attackType = unitType::MELEE;
 		unitMovementType movementType = unitMovementType::GROUND;
-		coords pastPlaces[15];
+		coords pastPlaces[5];
 public: 
 	int x = -1,
 		y = -1,
@@ -167,11 +180,11 @@ public:
 		movementType = mvType;
 
 		switch (attackType) {
-		case unitType::MELEE: damageN = 15;
+		case unitType::MELEE: damageN = 2;
 			break;
-		case unitType::RANGED: damageN = 15;
+		case unitType::RANGED: damageN = 1;
 			break;
-		case unitType::MORTAR: damageN = 15;
+		case unitType::MORTAR: damageN = 1;
 			break;
 		default: damageN = 1;
 		}
@@ -202,6 +215,10 @@ public:
 	bool isAlive() {
 		if (health > 0) return true;
 		else return false;
+	}
+
+	int getHealth() {
+		return health;
 	}
 
 	unitType getUnitType() {
@@ -243,53 +260,46 @@ public:
 
 	void move(coords coordsToMoveTo) {
 
-		if (moveCycle < speed - 1) {
-			int tempx = x - coordsToMoveTo.x;
-			int tempy = y - coordsToMoveTo.y;
+		int tempx = x - coordsToMoveTo.x;
+		int tempy = y - coordsToMoveTo.y;
 
-			if (tempx == 1 && tempy == 0) { uDir = unitDirection::WEST; }
-			if (tempx == 0 && tempy == 1) { uDir = unitDirection::NORTH; }
-			if (tempx == -1 && tempy == 0) { uDir = unitDirection::EAST; }
-			if (tempx == 0 && tempy == -1) { uDir = unitDirection::SOUTH; }
-
-
-			//code below stores array of last moves for units to go back without spending more tiles
-
-			pastPlaces[moveCycle] = { x, y };
-
-			int temp;
-			if ((moveCycle - 1) <= 0) {
-				temp = 0;
-			}
-			else {
-				temp = moveCycle - 1;
-			}
+		if (tempx == 1 && tempy == 0) { uDir = unitDirection::WEST; }
+		if (tempx == 0 && tempy == 1) { uDir = unitDirection::NORTH; }
+		if (tempx == -1 && tempy == 0) { uDir = unitDirection::EAST; }
+		if (tempx == 0 && tempy == -1) { uDir = unitDirection::SOUTH; }
 
 
-			if (coordsToMoveTo.x == pastPlaces[temp].x && coordsToMoveTo.y == pastPlaces[temp].y) {
-				x = coordsToMoveTo.x;
-				y = coordsToMoveTo.y;
-				moveCycle--;
-			}
-			else {
-				x = coordsToMoveTo.x;
-				y = coordsToMoveTo.y;
-				moveCycle++;
-			}
+		//code below stores array of last moves for units to go back without spending more tiles
 
-			//fills coords of array with (-1, -1), a spot outside the map
-			for (int t = moveCycle; t < speed; t++) {
-				pastPlaces[t] = { -1, -1 };
-			}
+		pastPlaces[moveCycle] = { x, y };
+
+		int temp;
+		if ((moveCycle - 1) <= 0) {
+			temp = 0;
 		}
 		else {
+			temp = moveCycle - 1;
+		}
+
+		if (coordsToMoveTo.x == pastPlaces[temp].x && coordsToMoveTo.y == pastPlaces[temp].y) {
 			x = coordsToMoveTo.x;
 			y = coordsToMoveTo.y;
-			moveState = 2;
+			moveCycle--;
+		}
+		else if (moveCycle < speed) {
+			x = coordsToMoveTo.x;
+			y = coordsToMoveTo.y;
+			moveCycle++;
+		}
+
+		//fills coords of array with (-1, -1), a spot outside the map
+		for (int t = moveCycle; t < speed; t++) {
+			pastPlaces[t] = { -1, -1 };
 		}
 	}
 
 	void clearPastPlaces() {
+		moveCycle = 0;
 		for (int t = 0; t < sizeof(pastPlaces) / sizeof(pastPlaces[0]); t++) {
 			pastPlaces[t].set(-1, -1);
 		}
@@ -334,10 +344,6 @@ public:
 
 class GameState {
 private:
-	int friendlyUnitsAm = 0, enemyUnitsAm = 0;
-
-	coords origin = { 0, 0 };
-	
 	int unitPlacement[worldsX][worldsY] = { 0 }; //map of all current units
 	int worldField[worldsX][worldsY] = { 0 }; //terrain map
 
@@ -346,45 +352,131 @@ public:
 	//---------------------IMPORTANT-NOTE---------------------//
 	
 	//this is all gross. 
-	//std::vector would've been better. Too late now to change. 
-	//not that big a problem, it just limits levels to 9x9 squares.
+	//std::vector would've been better. Too late to change now. 
+	//not that big a problem, it just limits levels to 11x11 squares.
 
 	//3 units max; (again, std::vector would've been better)
 
-	Unit fUnits[3];
-	Unit eUnits[3];
+	Unit fUnits[friendlyUnitsAm];
+	Unit eUnits[enemyUnitsAm];
 
-	Objective eObjtv = { 0, 0, 0 };
-	Objective fObjtv = { 0, 0, 0 };
+	Objective eObjtv = {1, 1, 1};
+	Objective fObjtv = { 1, 1, 1 };
 
 	bool areAttacking = false;
-	levelState lvState = levelState::INACCESSIBLE;
 
 	//initializerlist was used so we can use coords and objective in the constructor class
 
-	GameState(coords origin, Objective EOBJ, Objective FOBJ, std::string path, Unit * FUnits, Unit * EUnits, int fUnitsAm, int eUnitsAm) : 
-		origin(origin.x, origin.y),
-		eObjtv( EOBJ.x, EOBJ.y, EOBJ.getHealth() ), 
-		fObjtv(FOBJ.x, FOBJ.y, FOBJ.getHealth()) {
+	GameState(std::string path) {
 
-		friendlyUnitsAm = fUnitsAm;
-		enemyUnitsAm = eUnitsAm;
-		
-		for (int t = 0; t < friendlyUnitsAm; t++) {
-			fUnits[t] = FUnits[t];
-		}
-		for (int t = 0; t < enemyUnitsAm; t++) {
-			eUnits[t] = EUnits[t];
-		}
+		//////////////////////////////////////////////////////////////////////
+		//
+		//	explanation;
+		//	it reads 2D array from file
+		//	0 = dirt, 1 = mountain,  2 = water, 3 = sand, 4 = lava
+		//	if it reads anything else; namely the ascii values for 'o' or 'u'; check following values
+		//	according to those, units and objectives are placed on the map. Pretty clean solution, in my opinion.
+		//
 
 		std::fstream mapFile;
 		mapFile.open(path);
-		char a;
+		char readChar;
+
+		int fUnitCounter = 0;
+		int eUnitCounter = 0;
+
 		for (int x = 0; x < worldsX; x++) {
 			for (int y = 0; y < worldsY; y++) {
-				mapFile.get(a);
-				worldField[x][y] = atoi(&a);
-				mapFile.ignore();
+				mapFile.get(readChar);
+				switch (readChar) {
+				case 111: //ascii code for 'o' (as in objective) is read;
+					mapFile.get(readChar); //check following char
+					if (readChar == 102) { //if following char is 'f'; set friendly objective on this tile
+						fObjtv.x = x;
+						fObjtv.y = y;
+						fObjtv.setHealth(7); //set fObjective to this location
+					}
+					else if (readChar == 101) { //if following char is 'e'; set enemy objective on this tile
+						eObjtv.x = x;
+						eObjtv.y = y;
+						eObjtv.setHealth(7);  //set eObjective to this location
+					}
+					y -= 1; // y-1 because we skip one char, so we don't read outside of array
+					break;
+
+				case 117: //ascii code for 'u' (as in unit) is read;
+
+					mapFile.get(readChar); //check following char
+
+					if (readChar == 102) { //if following char is 'f';
+
+						mapFile.get(readChar);
+						unitType utype;
+						unitMovementType umvType;
+
+						switch (readChar) {
+						case 77: utype = unitType::MELEE; //code for 'M'
+							break;
+						case 109: utype = unitType::MORTAR; //code for 'm'
+							break;
+						case 114: utype = unitType::RANGED; //code for 'r'
+							break;
+						default: utype = unitType::MELEE;
+						}
+
+						mapFile.get(readChar);
+
+						switch (readChar) {
+						case 110: umvType = unitMovementType::NAVAL; //code for 'n'
+							break;
+						case 103:  umvType = unitMovementType::GROUND; //code for 'g'
+							break;
+						case 97:  umvType = unitMovementType::AERIAL; //code for 'a'
+							break;
+						default:  umvType = unitMovementType::GROUND; 
+						}
+
+						fUnits[fUnitCounter].set(Unit(x, y, 3, 3, utype, umvType)); //capital 'M'
+						fUnitCounter++;
+					}
+					else if (readChar == 101) { //if following char is 'e';
+						
+						mapFile.get(readChar);
+						unitType utype;
+						unitMovementType umvType;
+
+						switch (readChar) {
+						case 77: utype = unitType::MELEE; //code for 'M'
+							break;
+						case 109: utype = unitType::MORTAR; //code for 'm'
+							break;
+						case 114: utype = unitType::RANGED; //code for 'r'
+							break;
+						default: utype = unitType::MELEE;
+						}
+
+						mapFile.get(readChar);
+
+						switch (readChar) {
+						case 110: umvType = unitMovementType::NAVAL; //code for 'n'
+							break;
+						case 103:  umvType = unitMovementType::GROUND; //code for 'g'
+							break;
+						case 97:  umvType = unitMovementType::AERIAL; //code for 'a'
+							break;
+						default:  umvType = unitMovementType::GROUND;
+						}
+
+						eUnits[eUnitCounter].set(Unit(x, y, 3, 3, utype, umvType)); //capital 'M'
+						eUnitCounter++;
+					}
+					y -= 1; // y-1 because we skip one char, so we don't read outside of array
+					break;
+				default:
+					worldField[x][y] = atoi(&readChar);
+					mapFile.ignore();
+				}
+				
 			}
 		}
 
@@ -393,13 +485,7 @@ public:
 
 	GameState() = default;
 
-
 	void set(GameState gs) {
-
-		friendlyUnitsAm = gs.getFUnitsAm();
-		enemyUnitsAm = gs.getEUnitsAm();
-
-		origin = gs.getOrigin();
 
 		for (int x = 0; x < worldsX; x++) {
 			for (int y = 0; y < worldsY; y++) {
@@ -421,14 +507,14 @@ public:
 		eObjtv = gs.eObjtv;
 	}
 
-	bool winloss() {
+	winloss winloss() {
 
-		if (eObjtv.getHealth() <= 0) {
-			return true;
+		if (!fObjtv.isAlive()) {
+			return winloss::LOSS;
 		}
 
-		if (fObjtv.getHealth() <= 0) {
-			return false;
+		if (!eObjtv.isAlive()) {
+			return winloss::WON;
 		}
 
 		bool fAlive = false;
@@ -438,7 +524,7 @@ public:
 			}
 		}
 		if (!fAlive) {
-			return true;
+			return winloss::LOSS;
 		}
 
 		bool eAlive = false;
@@ -448,10 +534,22 @@ public:
 			}
 		}
 		if (!eAlive) {
-			return true;
+			return winloss::WON;
 		}
 
-		return false;
+		return winloss::NA;
+	}
+
+	bool areMoving() {
+		bool areMoving = false;
+
+		for (int t = 0; t < friendlyUnitsAm; t++) {
+			if (fUnits[t].moveState == 1) {
+				areMoving = true;
+			}
+		}
+
+		return areMoving;
 	}
 
 	//arrays
@@ -486,18 +584,6 @@ public:
 		for (int t = 0; t < friendlyUnitsAm; t++) {
 			fUnits[t] = FUnits[t];
 		}
-	}
-
-	coords getOrigin() {
-		return origin;
-	}
-
-	int getFUnitsAm() {
-		return friendlyUnitsAm;
-	}
-
-	int getEUnitsAm() {
-		return enemyUnitsAm;
 	}
 };
 /*
