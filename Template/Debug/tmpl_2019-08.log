@@ -1,4 +1,6 @@
 ﻿  game.cpp
-D:\projectBUAS\Template\game.cpp(866,31): warning C4018: '<': signed/unsigned mismatch
-D:\projectBUAS\Template\game.cpp(1347,39): warning C4018: '<': signed/unsigned mismatch
+  surface.cpp
+  template.cpp
+  Generating Code...
+LINK : warning LNK4217: symbol '_exit' defined in 'libucrtd.lib(exit.obj)' is imported by 'sdl2main.lib(SDL_windows_main.obj)' in function '_main'
   tmpl_2019-08.vcxproj -> D:\projectBUAS\Template\tmpl_2019-08_x86_debug.exe

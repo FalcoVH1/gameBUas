@@ -1,3 +1,0 @@
-﻿  main.cpp
-C:\projectBUAS\Getting Started\Getting Started\main.cpp(4,1): warning C4326: return type of 'main' should be 'int' instead of 'void'
-  Getting Started.vcxproj -> C:\projectBUAS\Getting Started\Debug\Getting Started.exe

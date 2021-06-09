@@ -138,6 +138,10 @@ public:
 		health -= damageValue;
 	}
 
+	void heal(int healValue) {
+		health += healValue;
+	}
+
 	int getHealth() {
 		return health;
 	}
@@ -256,6 +260,12 @@ public:
 
 	void takeDamage(int damageValue) {
 		health -= damageValue;
+	}
+
+	void heal(int healValue) {
+
+		if ((health + healValue) < 3 && health > 0)
+			health += healValue;
 	}
 
 	void move(coords coordsToMoveTo) {
@@ -586,6 +596,8 @@ public:
 		}
 	}
 };
+
+//unused dialogue code :(
 /*
 class sentence
 {

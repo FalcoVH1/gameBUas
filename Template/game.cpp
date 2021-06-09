@@ -29,40 +29,39 @@ namespace Tmpl8
 	 */
 
 
-
 	 //------------------------------------------------------------------------------------------------global variables------------------------------------------------------------------------------------------------//
 
+	//sprite declarations
 
-	 //Surface* tiles = new Surface("assets/defTiles.png");
+	//these aren't sprites because they use a different rendering function
 	Surface* colTile = new Surface("assets/inGame/specialTile.png");
-	//Surface* selectTile = new Surface("assets/selectTile.png");
 	Surface* defaultAnt = new Surface("assets/inGame/defaultAnt.png");
+	Surface* defaultEnAnt = new Surface("assets/inGame/defaultEnAnt.png");
 
-	static Sprite planetSelect(new Surface("assets/UI/menuScreen.png"), 1);
-	//Sprite planetSelect(new Surface("assets/menuScreen.bmp"), 1);
-	static Sprite planet0(new Surface("assets/UI/planet0.png"), 1);
-	static Sprite planet1(new Surface("assets/UI/planet1.png"), 1);
-	static Sprite planet2(new Surface("assets/UI/planet2.png"), 1);
-	static Sprite planet3(new Surface("assets/UI/planet3.png"), 1);
-	static Sprite button(new Surface("assets/UI/button.png"), 11);
+	//all the sprites
+	Sprite planetSelect(new Surface("assets/UI/menuScreen.png"), 1);
+	Sprite planetSelectTxt(new Surface("assets/UI/planetSelectTxt.png"), 1);
+	Sprite planet0(new Surface("assets/UI/planet0.png"), 1);
+	Sprite planet1(new Surface("assets/UI/planet1.png"), 1);
+	Sprite planet2(new Surface("assets/UI/planet2.png"), 1);
+	Sprite planet3(new Surface("assets/UI/planet3.png"), 1);
+	Sprite button(new Surface("assets/UI/button.png"), 11);
 
-	static Sprite selectTileS(new Surface("assets/inGame/selectTile.png"), 1);
-	static Sprite pathTile(new Surface("assets/inGame/pathTile.png"), 1);
-	static Sprite groundTiles(new Surface("assets/inGame/defTiles.png"), 8);
-	static Sprite healthBar(new Surface("assets/inGame/healthBar.png"), 4);
-	static Sprite objHealthBar(new Surface("assets/inGame/objHealthBar.png"), 8);
-	static Sprite mountain(new Surface("assets/inGame/mountain.png"), 1);
-	static Sprite dmountain(new Surface("assets/inGame/dmountain.png"), 1);
-	static Sprite antHill(new Surface("assets/inGame/antsObj.png"), 1);
-	static Sprite unitInfo(new Surface("assets/UI/unitInfo.png"), 1);
-	static Sprite menuHeader(new Surface("assets/UI/menuHeader.png"), 1);
-	static Sprite phaseInd(new Surface("assets/UI/phaseInd.png"), 2);
-	static Sprite attackPattern(new Surface("assets/UI/attackPattern.png"), 4);
-	static Sprite environmentalHazardInfo(new Surface("assets/UI/environmentalHazardInfo.png"), 1);
-
-
-
-	//Font nFont("assets/font.ttf", "abcdefghijklmnopqrstuvwxyz0123456789!?:=,.-() #'*/");
+	Sprite selectTileS(new Surface("assets/inGame/selectTile.png"), 1);
+	Sprite pathTile(new Surface("assets/inGame/pathTile.png"), 1);
+	Sprite groundTiles(new Surface("assets/inGame/defTiles.png"), 8);
+	Sprite healthBar(new Surface("assets/inGame/healthBar.png"), 4);
+	Sprite objHealthBar(new Surface("assets/inGame/objHealthBar.png"), 8);
+	Sprite levelBackground(new Surface("assets/inGame/levelBackground.png"), 1);
+	Sprite mountain(new Surface("assets/inGame/mountain.png"), 1);
+	Sprite dmountain(new Surface("assets/inGame/dmountain.png"), 1);
+	Sprite antHill(new Surface("assets/inGame/antsObj.png"), 1);
+	Sprite enAntHill(new Surface("assets/inGame/enAntsObj.png"), 1);
+	Sprite unitInfo(new Surface("assets/UI/unitInfo.png"), 1);
+	Sprite menuHeader(new Surface("assets/UI/menuHeader.png"), 1);
+	Sprite phaseInd(new Surface("assets/UI/phaseInd.png"), 2);
+	Sprite attackPattern(new Surface("assets/UI/attackPattern.png"), 4);
+	Sprite environmentalHazardInfo(new Surface("assets/UI/environmentalHazardInfo.png"), 1);
 
 	int AItimer = 0, AIstep = 0, turnState = 0, lvID = 0, wrldID = 0, moveStep = 0, worldSelect = 100, levelSelect = 100;
 	bool inGame = false, inDialogue = false;
@@ -73,11 +72,6 @@ namespace Tmpl8
 
 	levelState lvState[worldsAm][levelsPerWorld];
 
-	/*
-	dialogue dLog(
-		std::vector<sentence>(2, sentence("cringe", dPerson::ANT))
-	);
-	*/
 	static const coords directions[4] = {
 		coords(0, 1),
 		coords(0, -1),
@@ -87,14 +81,14 @@ namespace Tmpl8
 
 	LevelButton goBackBtn(20, 20, 50, 50, 6), continueBtn(845, 630, 50, 50, 8), cancelBtn(905, 630, 50, 50, 9), confirmBtn(905, 630, 50, 50, 8);
 
-	static Button worldSelectBtns[4] = {
+	Button worldSelectBtns[4] = {
 		Button(110, 246, 120, 120),
 		Button(350, 422, 133, 133),
 		Button(648, 158, 238, 238),
 		Button(878, 468, 154, 154)
 	};
 
-	static LevelButton levelSelectBtns[4][6] = {
+	LevelButton levelSelectBtns[4][6] = {
 		LevelButton(90, 300, 50, 50, 0),
 		LevelButton(290, 260, 50, 50, 1),
 		LevelButton(480, 200, 50, 50, 2),
@@ -136,7 +130,7 @@ namespace Tmpl8
 
 	//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
-
+	//function prototypes for important functions
 	void setDistanceMap(coords c1);
 	bool onMap(coords c);
 	bool canMoveHere(Unit* unit, int x, int y);
@@ -144,20 +138,21 @@ namespace Tmpl8
 	void setUnitMap();
 	const void resetUnits();
 
+
+	//function to move units
 	void moveUnits(Unit* fUnits, Unit* eUnits, coords selectedC) {
 
+		//log all units currently alive and on the map
 		setUnitMap();
 
 			//resets attacking before move phase
 			memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
 			for (int i = 0; i < friendlyUnitsAm; i++) {
 				fUnits[i].attackState = 0;
-				//fUnits[i].clearPastPlaces();
 			};
 
 			for (int i = 0; i < enemyUnitsAm; i++) {
 				eUnits[i].attackState = 0;
-				//eUnits[i].clearPastPlaces();
 			};
 
 			for (int t = 0; t < friendlyUnitsAm; t++) {
@@ -177,12 +172,8 @@ namespace Tmpl8
 						targetOccupied = true;
 					}
 
-					//currently checks how far fields are away from unit, but this might have to change to accomodate for terrain, etc.
-
+					//if the player clicks on a tile 1 tile away from unit; move the unit 1 tile, else; cancel movement by turning movement to 0
 					if (onMap(selectedC) && getDist(selectedC, fUnits[t].getCoords()) == 1.0 && !targetOccupied && canMoveHere(&fUnits[t], selectedC.x, selectedC.y)) {
-
-						//printf("X: %i, Y: %i\n", selectedC.x, selectedC.y);
-						//printf("%i\n", level.getUnitPlacement(7, 3));
 
 						//-1 to getSpeed because the last square of movement gets done in the else- part of this statement
 						fUnits[t].move(selectedC);
@@ -239,7 +230,7 @@ namespace Tmpl8
 			}
 		}
 
-		//printf(level.winloss() ? "true" : "false");
+		//check if the player beat the level or not; if so, unlock next level, else; send player back to menu
 		if (level.winloss() == winloss::WON) {
 
 			level.set(levelBackup);
@@ -259,7 +250,6 @@ namespace Tmpl8
 			lvState[wrldID][lvID] = levelState::STARTED;
 			inGame = false;
 		}
-		//level.winloss();
 	}
 
 	//checks if cursor is located in between given coords
@@ -317,7 +307,7 @@ namespace Tmpl8
 	}
 
 	//draws units
-	void drawUnits(Surface* screen, Unit* fUnits, int fUnitsAm) {
+	void drawUnits(Surface* screen, Unit* fUnits, int fUnitsAm, bool side) {
 		
 		for (int t = 0; t < fUnitsAm; t++) {
 
@@ -337,6 +327,7 @@ namespace Tmpl8
 
 				int dir, type;
 
+				//gets direction from the unit to set the angle of the texture
 				switch (fUnits[t].uDir) {
 				case unitDirection::NORTH: dir = 2;
 					break;
@@ -348,6 +339,7 @@ namespace Tmpl8
 					break;
 				}
 
+				//set sprite based on unit type
 				switch (fUnits[t].getMvType()) {
 				case unitMovementType::AERIAL: type = 0;
 					break;
@@ -357,10 +349,19 @@ namespace Tmpl8
 					break;
 				}
 
+				Pixel* src;
 
-				//wrote this code way back, decided to keep it. No reason in particular, it's just something neat that I wrote myself (somehow)
+				//depending on what side, change texture to enemy ants or allied ants
+				if (side) {
+					src = defaultAnt->GetBuffer() + dir * tileSize.x + (type * tileSize.x) * (64 * 4); //uses tilesize because units are the same size as the tiles :)
+				}
+				else {
+					src = defaultEnAnt->GetBuffer() + dir * tileSize.x + (type * tileSize.x) * (64 * 4);
+				}
+					
+				//wrote this code way back, decided to keep it. No reason in particular, but I find it to be something neat that I wrote myself (somehow) that I kind of wanted to keep in
 				//draws ants lol
-				Pixel* src = defaultAnt->GetBuffer() + dir * tileSize.x + (type * tileSize.x) * (64 * 4); //uses tilesize because units are the same size as the tiles :)
+				
 				Pixel* dst = screen->GetBuffer() + temp.x + (temp.y - 14) * ScreenWidth;
 				for (int i = 0; i < tileSize.x; i++, src += (64 * 4), dst += ScreenWidth)
 					for (int j = 0; j < tileSize.x; j++)
@@ -381,7 +382,6 @@ namespace Tmpl8
 					//draws cancel attack button
 					//it's here because it's easier to do it here
 
-					//screen->Bar(270, 450, 330, 500, 0x0000ff);
 					button.SetFrame(cancelBtn.type);
 					button.Draw(screen, cancelBtn.x, cancelBtn.y);
 
@@ -412,11 +412,12 @@ namespace Tmpl8
 	}
 
 	void drawObjectives(Objective fObj, Surface* screen, Sprite* obj) {
+
+		//if objective is alive; draw it on the field
+
 		if (fObj.getHealth() > 0) {
 
 			coords temp = toScreen(fObj.x, fObj.y);
-
-			//draw(2, 0, screen, tiles, temp.x, temp.y, tileSize.y, tileSize.x * 3, tileSize.y, tileSize.x);
 
 			obj->DrawScaled(temp.x, temp.y - 20, 64, 64, screen);
 		}
@@ -425,7 +426,6 @@ namespace Tmpl8
 	const void resetUnits() {
 		memset(AIPMoves, 0, sizeof(AIPMoves));
 		memset(threatenedPlaces, 0, sizeof(threatenedPlaces));
-		//pathToTake.resize(0);
 
 		for (int i = 0; i < friendlyUnitsAm; i++) {
 			level.fUnits[i].attackState = 0;
@@ -442,26 +442,43 @@ namespace Tmpl8
 		};
 	}
 
+	////////////////////////////////////////////////////////////////////////
+	//
+	// handles what happens when the mouse is clicked;
+	//
+	// when clicking a button, execute the button's function.
+	// -clicking on a planet selects that world
+	// -selects level on a planet and loads it
+	// -goes back when clicking the return button
+	// -set selected unit when clicked on a unit
+	//
+
 	void Game::MouseDown(int button) {
 
-		auto reset = [](int t) {
+		//lambda expression to enter the level by loading it from file
+		auto enterLevel = [](int t) {
 			lvID = t;
 			wrldID = worldSelect;
 
+			//loads file based on currently selected world and level
 			string path = "assets/levels/level" + to_string(wrldID) + to_string(lvID) + ".txt";
-			printf("%s", path.c_str());
 			level.set(GameState(path));
 
+			//sets the levelbackup to the loaded level, so the base layout of the level is preserved in case the player wants to restart the level
 			levelBackup.set(level);
 
-			//level.set(levelBackup);
+			//enters the game
 			inGame = true;
 		};
 
-		if (selected.x >= worldsX || selected.x < 0 || selected.y >= worldsY || selected.y < 0 || level.getUnitPlacement(selected.x, selected.y) == 0) infoSelectedUnit.set({-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND});;
+		//if the mouseclick is outside of the field or the selected tile isn't an actual unit; sets the selected unit to a nonexistent one
+		if (selected.x >= worldsX || selected.x < 0 || selected.y >= worldsY || selected.y < 0 || level.getUnitPlacement(selected.x, selected.y) == 0) 
+			infoSelectedUnit.set({-1, -1, -1, -1, unitType::MELEE, unitMovementType::GROUND});;
 		
-		if (inGame && !inDialogue) {
+		
+		if (inGame) {
 
+			//if the player is located on the go back button while in game, return to menu and set the level back to its default state.
 			if (mouseLocated(goBackBtn.x, goBackBtn.y, goBackBtn.getX2(), goBackBtn.getY2())) {
 
 				level.set(levelBackup);
@@ -473,8 +490,9 @@ namespace Tmpl8
 			}
 
 
-			//------------------------------- clean up this part btw -------------------------------//
+			//-------------------------------------------------player-turn------------------------------------------------//
 			
+			//if it's the player's turn
 			if (turnState < 2) {
 				//button to transition between move and attack phase
 				if (mouseLocated(continueBtn.x, continueBtn.y, continueBtn.getX2(), continueBtn.getY2())) {
@@ -528,81 +546,37 @@ namespace Tmpl8
 				attackUnits(level.fUnits, level.eUnits, selected, eObjtvPointer);
 
 				break;
-				/*
-				case 2:
-
-					//move enemy units <-- add AI to do this instead
-					moveUnits(level[lvID].eUnits, level[lvID].fUnits, selected, level[lvID].getEUnitsAm(), level[lvID].getFUnitsAm());
-
-					break;
-				case 3:
-					Objective * fObjtvPointer;
-					fObjtvPointer = &level[lvID].fObjtv;
-
-					//attack with enemy units <-- add AI to do this instead
-					attackUnits(level[lvID].eUnits, level[lvID].fUnits, selected, level[lvID].getEUnitsAm(), level[lvID].getFUnitsAm(), fObjtvPointer);
-
-					break;
-					*/
 			}
 		}
-		else {
-			if (worldSelect == 100) {
+		else { //else if the player isn't in game, rather in the menu
+			if (worldSelect == 100) { //100 is arbitrary; if worldSelect == 100, no world has been selected yet. 
 
+				//if the mouse is located on the back button while in the planet select screen, exit out of the game
 				if (mouseLocated(goBackBtn.x, goBackBtn.y, goBackBtn.getX2(), goBackBtn.getY2())) {
 					exit(0);
 				}
 
+				//checks if the player clicks any of the 4 planets by looping over worldSelectBtns
 				for (int t = 0; t < sizeof(worldSelectBtns) / sizeof(worldSelectBtns[0]); t++) {
 
 					if (mouseLocated(worldSelectBtns[t].x, worldSelectBtns[t].y, worldSelectBtns[t].getX2(), worldSelectBtns[t].getY2())) {
 						worldSelect = t;
 					}
-					//screen->Box(worldSelectBtns[t].getX(), worldSelectBtns[t].getY(), worldSelectBtns[t].getX2(), worldSelectBtns[t].getY2(), 0x000000);
 				}
 			}
-			else {
+			else { //if worldselect isn't 100, meaning a planet has been selected, ask which level they want to play
 
+				//if the player clicks the back button, return to the planet select screen.
 				if (mouseLocated(goBackBtn.x, goBackBtn.y, goBackBtn.getX2(), goBackBtn.getY2())) {
 					worldSelect = 100;
 				}
-				else {
-					for (int t = 0; t < levelsPerWorld; t++) {
+				else { 
+					for (int t = 0; t < levelsPerWorld; t++) { //checks if the player clicks a level
 
 						if (mouseLocated(levelSelectBtns[worldSelect][t].x, levelSelectBtns[worldSelect][t].y, levelSelectBtns[worldSelect][t].getX2(), levelSelectBtns[worldSelect][t].getY2())) {
-							/*if (worldSelect == 0) {
-								if (t - 1 < 0) {
-									reset(t);
-								}
-								else if (level[worldSelect][t - 1].completed) {
-									reset(t);
-								}
-								else
-								{
-									printf("You can't access this level yet!\n");
-								}
-							}
-							else {
-								if (level[worldSelect - 1][5].completed) {
-									if (t - 1 < 0) {
-										reset(t);
-									}
-									else if (level[worldSelect][t - 1].completed) {
-										reset(t);
-									}
-									else
-									{
-										printf("You can't access this level yet!\n");
-									}
-								}
-								else
-								{
-									printf("You can't access this level yet!\n");
-								}
-							}*/
 
-							if (lvState[worldSelect][t] != levelState::INACCESSIBLE) {
-								reset(t);
+							if (lvState[worldSelect][t] != levelState::INACCESSIBLE) { //if the state of the level isn't 'INACCESSIBLE', enter the level
+								enterLevel(t);
 							}
 						}
 					}
@@ -612,96 +586,43 @@ namespace Tmpl8
 	};
 
 	void Game::KeyDown(int key) {
-
-		/*
-		if (key == 44) {
-			inGame ? worldSelect = 100, inGame = false : inGame = true;
-		}
-		*/
-
-		if (key == 44) {
-			inDialogue ? inDialogue = false : inDialogue = true;
-		}
-
-		if (inGame) {
-
-			resetUnits();
-
-			/*
-			switch (key) {
-			case 80: if (lvID - 1 >= 0) {
-				level.set(levelBackup);
-				lvID--;
-			}
-				   break;
-
-			case 79: if (lvID + 1 < sizeof(level) / sizeof(level[0])) {
-				level.set(levelBackup);
-				lvID++;
-			}
-				   break;
-			}
-			*/
-			//resets both attack and movement for all units
-
-			turnState = 0;
-			pathToTake.resize(0);
-
-			levelBackup.set(level);
-		}
+		//does nothing on key down.
 	}
 
-	/*
-	void tokenize(std::string const& str, const char delim,
-		std::vector<std::string>& out)
-	{
-		size_t start;
-		size_t end = 0;
-
-		while ((start = str.find_first_not_of(delim, end)) != std::string::npos)
-		{
-			end = str.find(delim, start);
-			out.push_back(str.substr(start, end - start));
-		}
-	}
-	*/
 	void Game::Init() {
 
-		//for (int wrldInd = 0; wrldInd < sizeof(level) / sizeof(level[0]); wrldInd++) {
-			//for (int lvInd = 0; lvInd < sizeof(level[wrldInd]) / sizeof(level[wrldInd][0]); lvInd++) {
-
-				//string path = "assets/levels/level" + to_string(wrldInd) + to_string(lvInd) + ".txt";
-				//printf("%s\n", path.c_str());
-				//level[wrldInd][lvInd].set(GameState(path));
-			//}
-		//}
-		//std::fill_n(lvState, worldsAm * levelsPerWorld, levelState::INACCESSIBLE);
+		//at the start of the game, set all the levels to INACCESSIBLE. However; this doesn't load them in just yet, that happens when a level is actually selected.
+		//doing this the amount of time reading from the level files in minimized 
+		//(not that it really matters, but efficiency's fun, you know? Although, if I wanted to be even more efficient, storing it in bin files would've probs been better than txt files, but that seemed a little too complicated at the time.)
 
 		for (int i = 0; i < worldsAm; i++) {
 			for (int ii = 0; ii < levelsPerWorld; ii++) {
-				lvState[i][ii] = levelState::STARTED;
+				lvState[i][ii] = levelState::INACCESSIBLE;
 			}
 		}
 
+		//set the first level to started
 		levelBackup.set(level);
 		lvState[0][0] = levelState::STARTED;
 	}
 
 
 	void Game::Shutdown() {
+
+		//delete all pointers to avoid memory leaks
 		delete colTile;
 		delete defaultAnt;
+		delete defaultEnAnt;
 	}
 
 	bool onMap(coords c) {
-		//checks if given coordinates are on teh map
+		//checks if given coordinates are on the map
 		return (c.x < worldsX && c.x >= 0 && c.y < worldsY && c.y >= 0);
 	}
 
 	int getDist(coords c1, coords c2) {
 
 		setDistanceMap(c1);
-		//printf("%i\n", distanceMap[c2.x][c2.y]);
 		return distanceMap[c2.x][c2.y];
 	}
 
@@ -710,9 +631,34 @@ namespace Tmpl8
 
 
 		/*
-		//clean, compact, simple mathematical..
-		//absolute rubbish!
-		//doesn't coincide with the movement of the game, thus is deemed unusable
+
+		This was the previous iteration of distance calculation; clean, compact, simple pythagoras calculation..
+		absolute rubbish!
+		doesn't coincide with the movement of the game
+		for context; say that from a certain point, I would mark every point on the map with a distance of 2 or less to that fixed point
+		using pythagoras, that'd look like this;
+
+		0 0 0 0 0 0 0
+		0 0 X X X 0 0
+		0 X X X X X 0
+		0 X X O X X 0
+		0 X X X X X 0
+		0 0 X X X 0 0
+		0 0 0 0 0 0 0
+
+		which isn't the shape I want!
+
+		the shape I that I needed is the following;
+
+		0 0 0 0 0 0 0
+		0 0 0 X 0 0 0
+		0 0 X X X 0 0
+		0 X X O X X 0
+		0 0 X X X 0 0
+		0 0 0 X 0 0 0
+		0 0 0 0 0 0 0
+
+		thus, this was deemed unusable
 
 		float diffX = float(c1.x) - float(c2.x), diffY = float(c1.y) - float(c2.y);
 
@@ -721,7 +667,7 @@ namespace Tmpl8
 
 
 
-		//now this! This is how you calculate distance.
+		//now this! This is how you calculate distance. ;)
 
 		for (int x = 0; x < worldsX; x++) {
 			for (int y = 0; y < worldsY; y++) {
@@ -755,14 +701,6 @@ namespace Tmpl8
 				}
 			}
 		}
-		/*
-		for (int x = 0; x < level[lvID].getWorld().x; x++) {
-			for (int y = 0; y < level[lvID].getWorld().y; y++) {
-				printf("%i ", distanceMap[x][y]);
-			}
-			printf("\n");
-		}
-		*/
 	}
 
 
@@ -775,12 +713,23 @@ namespace Tmpl8
 
 	bool canMoveHere(Unit* unit, int x, int y) {
 	
-		//checks if the unit can move to the given coords
+		//checks if the unit can move to the given coords, using various restrictions based on movement
+
+		/*
+		How it goes;
+
+		naval units can walk on water and lava tiles
+
+		aerial unit scan walk on every tile
+
+		grounded units can walk on every tile except from water and mountain tiles
+		
+		*/
 
 		switch (unit->getMvType()) {
 		case unitMovementType::GROUND:
 
-			if ((level.getWorldField(x, y) == 4 || level.getWorldField(x, y) == 3 || level.getWorldField(x, y) == 0 || level.getWorldField(x, y) == 7) && level.getUnitPlacement(x, y) == 0) {
+			if ((level.getWorldField(x, y) == 4 || level.getWorldField(x, y) == 3 || level.getWorldField(x, y) == 0 || level.getWorldField(x, y) == 7 || level.getWorldField(x, y) == 8) && level.getUnitPlacement(x, y) == 0) {
 
 				return true;
 			}
@@ -814,31 +763,45 @@ namespace Tmpl8
 		return true;
 	}
 
-
-	bool findPath(Unit* unit, coords startLoc, coords dest, int maxRange = (worldsX * worldsY)) {
+	//finds a path from 1 tile to another tile, according to the unit's specifications
+	bool findPath(Unit* unit, coords startLoc, coords dest, int maxRange = (worldsX * worldsY)) { //maxrange is usually enough to cover the entire map, but can be a given parameter to check if a destination is within a certain distance of the startlocation
+		//startlocation and unit are 2 different parameters, so we can test possible moves that don't start from the unit's actual starting position
 
 		std::vector<std::vector<coords>> possiblePaths(1, std::vector<coords>(1, {startLoc.x, startLoc.y}));
 		int scannedAreas[worldsX][worldsY] = { 0 };
 
-		//printf("startloc: x: %i | y: %i", startLoc.x, startLoc.y);
-
 		scannedAreas[startLoc.x][startLoc.y] = 1;
 
-		//possiblePaths[0][0] = { startLoc.x, startLoc.y };
-		
 		int it = 1;
 		
 		//how this works; the game checks for tiles with where scannedAreas isn't 0; if it finds one, it checks all neighbouring tiles where scannedAreas is 0.
 		//doing this (additionally ignoring tiles where either units are or where walls are), the entire board is checked (at least until the target is found) and a path is formed
 		//'it' is the amount of steps the unit has to take to reach any given position
 
-		//for any residual confusion after my horrible explanation; https://youtu.be/KiCBXu4P-2Y
-		//watch that
-		
+		//for any residual confusion after my horrible explanation, I recommend this video; https://youtu.be/KiCBXu4P-2Y
+		//It's a fairly standard algorithm and not all that hard either
+
+		//The reason this function is a boolean function is so it can also be used as a method to check whether a unit can reach a certain destination on the map given their current leftover movement
+		//so if the function finds a path the unit could realistically take, it returns true; aka the unit can actually move there
+
 		pathToTake.resize(0);
+		//possiblePaths is the array the actual path will be stored in; a 2D array of vectors, which stores a path on every X vector, and a set of coordinates along the Y vector
+		//pathToTake is the end result of the algorithm; so the actual path that's found
+		//to visualise;
+
+		/* this is how the array looks, going from [0,1] to [2,4]
+			[0,1] [0,2] [0,3] [0,4] [1,4] [2,4]
+			[0,1] [1,1] [2,1] [2,2] [2,3] [2,4]
+			...
+
+			this extends for every possible path the unit could take
+		*/
 
 		if (startLoc.equals(dest)) {
 
+			//when the destination is equal to the start location; 
+			//first clears the pathToTake array, then adds the starting location to it
+			//then returns true
 			pathToTake.resize(0);
 
 			pathToTake.push_back({startLoc.x, startLoc.y});
@@ -850,32 +813,34 @@ namespace Tmpl8
 			int size = possiblePaths.size();
 
 			for (int x = 0; x < worldsX; x++) {
-				for (int y = 0; y < worldsY; y++) {
+				for (int y = 0; y < worldsY; y++) {  //checks entire map
 
-					if (scannedAreas[x][y] == it && onMap({ x, y })) { //if the scannedareas equals it, so this iteration of this loop, and this tile is actually on the map, scan its neighbouring tiles
+					if (scannedAreas[x][y] == it && onMap({ x, y })) { //if the scannedareas equals 'it', so this iteration of this loop, and this tile is actually on the map, scan its neighbouring tiles
 					
-						for (int dir = 0; dir < 4; dir++) {
+						for (int dir = 0; dir < 4; dir++) { //scans all tiles around the already scanned tiles
 
-							if (dest.x == x + directions[dir].x && dest.y == y + directions[dir].y && onMap({ (x + directions[dir].x), (y + directions[dir].y) }) && canMoveHere(unit, (x + directions[dir].x), (y + directions[dir].y))) { //iuf a destination is found in these neighbouring tiles, stop the function and return true
-								
+							if (dest.x == x + directions[dir].x && dest.y == y + directions[dir].y && onMap({ (x + directions[dir].x), (y + directions[dir].y) }) && canMoveHere(unit, (x + directions[dir].x), (y + directions[dir].y))) { //if a destination is found in these neighbouring tiles, stop the function and return true
+								//if any of the neighbouring tiles are the destination, return the path and end the function
+
 								pathToTake.resize(0);
 
+								//sets the pathToTake array to the correct path
 								for (int t = 0; t < size; t++) {
 									if (possiblePaths[t].back().equals({ x, y })) {
 
-										for (int t2 = 0; t2 < possiblePaths[t].size(); t2++) {
+										for (size_t t2 = 0; t2 < possiblePaths[t].size(); t2++) {
 
-											pathToTake.push_back(possiblePaths[t][t2]);
+											pathToTake.push_back(possiblePaths[t][t2]); //fill pathToTake with the correct path
 										}
 									}
 								}
 
-								pathToTake.push_back( { x + directions[dir].x ,y + directions[dir].y } );
-								possiblePaths.clear();
-								return true;
+								pathToTake.push_back( { x + directions[dir].x ,y + directions[dir].y } ); //adds the final destination to pathToTake
+								possiblePaths.clear(); //clears the array
+								return true; //end the function
 
 							} else if (scannedAreas[x + directions[dir].x][y + directions[dir].y] == 0 && onMap({ (x + directions[dir].x), (y + directions[dir].y) }) && canMoveHere(unit, (x + directions[dir].x), (y + directions[dir].y))) {
-
+								//else if the scanned neighbours aren't the destination; mark them as scanned in the scannedAreas array and add their coordinates to possiblePaths
 								
 								for (int t = 0; t < size; t++) {
 									if (possiblePaths[t].back().equals({ x, y })) {
@@ -897,7 +862,7 @@ namespace Tmpl8
 		return false;
 	}
 	
-
+	//checks if unit at certain location is being threatened or not
 	int getAttackMap(Unit* unit, coords c) {
 
 		int AIThreatenedPlaces[worldsX][worldsY] = { 0 }; //map of all places threatened by AI
@@ -936,18 +901,14 @@ namespace Tmpl8
 
 		unit->setCoords(xy);
 
-		return AIThreatenedPlaces[c.x][c.y];
+		return AIThreatenedPlaces[c.x][c.y]; //returns 1 if c is a threatened field, 0 if not
 	}
 	
-
-	
+	//finds all tiles a unit can move to in order to attack another unit
 	void AIPossibleMoves(Unit* unit, coords target) {
 
 		memset(AIPMoves, 0, sizeof(AIPMoves));
 		
-
-		//printf("X: %i\n", target->getX());
-		//printf("Y: %i\n", target->getY());
 		coords xy = unit->getCoords(); //saves unit's location
 
 		//for every spot on the map
@@ -995,6 +956,8 @@ namespace Tmpl8
 							default:
 								AIPMoves[x][y] = 0;
 							}
+
+							//above switch statement fills the AIPMoves array with all the fields the unit could possibly threaten with its attack and within the confines of his movement
 						}
 					}
 				}
@@ -1008,8 +971,10 @@ namespace Tmpl8
 	
 	std::vector<coords> destinations(friendlyUnitsAm);
 
+	//sets the actual target for the AI
 	coords getTarget(int uIndex) {
 
+		//lambda expression which checks if a field is being attacked or not
 		auto AIattack = [&](Unit* unit, coords selected, int x, int y) {
 			//gets threatened fields for attacking units
 
@@ -1061,15 +1026,18 @@ namespace Tmpl8
 		for (int t = 0; t < friendlyUnitsAm; t++) {
 			if (level.fUnits[t].isAlive()) {
 
-
+				//default priority of 0 for all units
 				priority[t] = 0;
-				if (!isBeingAttacked && getAttackMap(&level.eUnits[uIndex], level.fObjtv.getCoords())) {
+
+				if (!isBeingAttacked && getAttackMap(&level.eUnits[uIndex], level.fObjtv.getCoords())) { //checks if the unit isn't currently being attack by a friendly unit and if it can attack the allied objective; if both of these are true,
+																										//set the target to the allied objective
 
 					destinations[uIndex].set(level.fObjtv.x, level.fObjtv.y);
-					return level.fObjtv.getCoords();
+					return level.fObjtv.getCoords(); //immediately returns the objective as the target for the AI
 
 				} else if ((AIattack(&level.fUnits[t], level.eObjtv.getCoords(), level.eObjtv.x, level.eObjtv.y) == 1 && getDist(level.fUnits[t].getCoords(), level.eUnits[uIndex].getCoords()) <= level.fUnits[t].getSpeed()) || getDist(level.fUnits[t].getCoords(), level.eObjtv.getCoords()) <= 3) {
 
+					//checks if a friendly unit is in range of an enemy unit, and if said friendly unit is threatening the enemy unit. If it is; set enemy unit to target friendly unit
 					priority[t] = 6;
 
 				}
@@ -1085,6 +1053,9 @@ namespace Tmpl8
 		int dist = 20000;
 		int temp = 0;
 		bool allZero = true;
+
+		//the next piece of code goes over every single unit and gets the one with the highest priority, assigned in the previous block of code,
+		//and takes the highest priority one. If all units are zero, this block of code is basically skipped and the next block of code is initiated.
 
 		for (int t = 0; t < friendlyUnitsAm; t++) {
 
@@ -1139,14 +1110,21 @@ namespace Tmpl8
 	
 	void AI(int turnSt, int uIndex) { //no need to pass a pointer to eUnits; AI will only address enemy units anyways --a shame, otherwise we could have AI vs AI battles :(
 	
-		//destinations.resize(level[lvID].getEUnitsAm());
+
+		///////////////////////////////////////////////////////////////
+		//
+		// This function handles everything the AI does; it receives the parameters turnstate -to checks if it's the attacking or moving phase- and uIndex, to determine which enemy unit is being moved.
+		// 
+		// 1. Sets the distancemap for the acting unit
+		// 2. Calls getTarget, to get a target for the unit. Duh ;)
+		// 3. Fills the AIPMoves array with all possible moves the enemy unit could take to attack the target, and picks the closest one
+		// 4. In the case that AIPMoves is empty, and the unit has no spaces to move to that are able to threaten its target; it looks for the tile that's closest to the target within its range.
+	
 		resetUnits();
 
 		if (turnSt == 2) {
 
 			setDistanceMap(level.eUnits[uIndex].getCoords());
-
-
 
 			coords targetedUnit = getTarget(uIndex);
 			
@@ -1159,6 +1137,7 @@ namespace Tmpl8
 				//get closest tile to attack target with
 				//find path to this closest tile
 
+			//gets all possible moves
 			AIPossibleMoves(&level.eUnits[uIndex], targetedUnit);
 			closestField.set(targetedUnit.x, targetedUnit.y);
 
@@ -1179,11 +1158,8 @@ namespace Tmpl8
 
 
 			//if AIPMoves contains no possible tiles; find closest tile to target.
-			
 			if (NoAIPMoves) {
 				closestDistance = 20000;
-				//printf("cringe");
-				//closestField.set(targetedUnit.x, targetedUnit.y);
 
 				for (int x = 0; x < worldsX; x++) {
 					for (int y = 0; y < worldsY; y++) {
@@ -1198,9 +1174,11 @@ namespace Tmpl8
 			}
 
 			
+			//If the closest tile ISN'T the tile the unit is standing on; calculate the path to travel there using findPath
+			//If it is; just do nothing! That means the unit is already in a good position.
 
 			if (!level.eUnits[uIndex].getCoords().equals(closestField)) {
-				//still something wrong here :(
+				//still something wrong here :( -not anymore! Ha!
 
 				int cl = 20000;
 				coords newCoords;
@@ -1222,17 +1200,7 @@ namespace Tmpl8
 
 
 				findPath(&level.eUnits[uIndex], level.eUnits[uIndex].getCoords(), closestField);
-
-				//}
-
-				//printf("----------------------------\n");
-				//for (auto& coord : pathToTake) {
-				//	printf("%i %i\n", coord.x, coord.y);
-				//}
 			}
-
-			//destinations[uIndex].set(closestField.x, closestField.y);
-			
 
 			AIMoving = true;
 			AItimer = 0;
@@ -1253,28 +1221,13 @@ namespace Tmpl8
 	void Game::Tick(float deltaTime)
 	{
 		
-		screen->Clear(0);
+		//screen->Clear(0);
+		levelBackground.Draw(screen, 0, 0);
 		mousePos = getMousePosInt();
-		
-		/*
-		for (int x = 0; x < worldsX; x++) {
-			for (int y = 0; y < worldsY; y++) {
-				printf("%i ", level.getUnitPlacement(x, y));
-			}
-			printf("\n");
-		}
-
-		system("CLS");
-		*/
-
-		//printf("X: %i, Y: %i\n", selected.x, selected.y);
-		//printf("%i\n", level.getUnitPlacement(selected.x, selected.y));
-
-
-		//printf("X:%i | Y: %i | %i\n", selected.x, selected.y, level.getUnitPlacement(selected.x, selected.y));
 
 		if (inGame) {
 
+			//draws the menu if the player is in game
 
 			menuHeader.Draw(screen, 0, 0);
 			button.SetFrame(goBackBtn.type);
@@ -1283,7 +1236,6 @@ namespace Tmpl8
 			turnState == 0 || turnState == 2 ? phaseInd.SetFrame(1) : phaseInd.SetFrame(0);
 			
 			phaseInd.Draw(screen, (ScreenWidth/2) - 251, 0);
-			//screen->Box(goBackBtn.x, goBackBtn.y, goBackBtn.getX2(), goBackBtn.getY2(), 0x000000);
 
 			setUnitMap();
 
@@ -1302,23 +1254,23 @@ namespace Tmpl8
 
 						if (level.eUnits[AIstep].isAlive()) {
 
-							AI(turnState, AIstep);
+							AI(turnState, AIstep); //essentially; when the turnstate is higher than 2, aka the enemy's turn; every second, call this function, and do this for every enemy unit (if the unit is alive) 
+													//
 						}
 						else {
-							AItimer = 59;
+							AItimer += 55;
 						}
 
-						AIstep++;
+						AIstep++; //AIStep is the iterator to select which unit is performing an action
 					}
 					else {
-						if (turnState == 3) {
+						if (turnState == 3) { //if the turnstate is equal to 3; (so if the next turnstate would be 0 again), perform all end of turn actions
 							turnState = 0;
 
 							//add end-of-turn events here!!
 
 
-
-
+							//damages all units standing on lava tiles
 							for (auto &Unit : level.fUnits) {
 								if (level.getWorldField(Unit.x, Unit.y) == 4) {
 									Unit.takeDamage(1);
@@ -1330,7 +1282,33 @@ namespace Tmpl8
 									Unit.takeDamage(1);
 								}
 							}
+							
+							//depending on which world the player is in; do different things
+							switch (worldSelect) {
+							case 1: 
+								
+								for (auto& Unit : level.fUnits) { //deal damage in the second world
+									Unit.takeDamage(1);
+								}
 
+								for (auto& Unit : level.eUnits) {
+									Unit.takeDamage(1);
+								}
+								
+								break;
+							case 3:
+								
+								for (auto& Unit : level.fUnits) { //heal when in the last world
+									Unit.heal(1);
+								}
+
+								for (auto& Unit : level.eUnits) {
+									Unit.heal(1);
+								}
+								
+								break;
+							}
+							
 						}
 						else {
 							turnState++;
@@ -1341,19 +1319,20 @@ namespace Tmpl8
 				AItimer = 0;
 			}
 
+			//the code below is what actually makes the units move
 			if (AItimer % 10 == 0 && AIMoving) {
 				if (turnState == 2) {
 
-					int shortest = pathToTake.size() < level.eUnits[AIstep - 1].getSpeed() + 1 ? pathToTake.size() : level.eUnits[AIstep - 1].getSpeed() + 1;
+					//gets the shortest of either the pathToTake length or the unit's movement speed;
+					//e.g.: when the unit has a movement speed of 5 but the path is only 3 long, this line of code takes 3, and vice versa
+					size_t shortest = static_cast<int>(pathToTake.size()) < level.eUnits[AIstep - 1].getSpeed() + 1 ? static_cast<int>(pathToTake.size()) : level.eUnits[AIstep - 1].getSpeed() + 1;
 
-					if (moveStep < shortest) {
-
-						//printf("%s\n", AIMoving ? "True" : "False");
-
-						//coords eDir = pathToTake[moveStep].subtract(level.eUnits[AIstep - 1].getCoords());
+					//for all stepts to be taken; move the unit to the next step
+					if (moveStep < static_cast<int>(shortest)) {
 
 						coords eDir = { pathToTake[moveStep].x - level.eUnits[AIstep - 1].x , pathToTake[moveStep].y - level.eUnits[AIstep - 1].y };
 
+						//set the unit direction based on which direction it's going; this is for spriting purposes
 						if (!(eDir.x == 0 && eDir.y == 0)) {
 							if (eDir.x == 1 && eDir.y == 0) { level.eUnits[AIstep - 1].uDir = unitDirection::EAST; }
 							if (eDir.x == 0 && eDir.y == 1) { level.eUnits[AIstep - 1].uDir = unitDirection::SOUTH; }
@@ -1380,7 +1359,7 @@ namespace Tmpl8
 			//draws turn button
 			unitInfo.Draw(screen, 845, 150);
 
-			//printf("%i", infoSelectedUnit.getHealth());
+			//sets the frame for the attack pattern thingy on the right side of the screen
 			if (infoSelectedUnit.isAlive()) {
 				switch (infoSelectedUnit.getUnitType()) {
 				case unitType::RANGED: attackPattern.SetFrame(0);
@@ -1393,8 +1372,10 @@ namespace Tmpl8
 			}
 			else attackPattern.SetFrame(3);
 
+			//draws the attack pattern thingy on the right side of the screen
 			attackPattern.Draw(screen, 860, 270);
 
+			//draws the environmental hazard info box on the right side of the screen, depending on what world the player is in
 			environmentalHazardInfo.Draw(screen, 860, 180);
 			switch (wrldID) {
 			case 0: screen->Print("Environmental Hazard: None", 870, 190, 0xffffff);
@@ -1411,25 +1392,24 @@ namespace Tmpl8
 
 				break;
 			case 3: screen->Print("Environmental Hazard: Gravity Flux", 870, 190, 0xffffff);
-				screen->Print("ALL units alternate between 1 bonus", 870, 220, 0xffffff);
-				screen->Print("movement and 1 less movement every turn.", 870, 230, 0xffffff);
+				screen->Print("The magical athmosphere of this planet", 870, 220, 0xffffff);
+				screen->Print("heals every unit by 1 every turn.", 870, 230, 0xffffff);
 
 				break;
 			}
 
-			
+			screen->Print("Click on the units to move/attack!", 870, 470, 0xffffff);
+			screen->Print("Kill all enemy units or the enemy", 870, 490, 0xffffff);
+			screen->Print("objective to win.", 870, 500, 0xffffff);
 
-			/*
-			printf("%s", coordsStr);
-			char char_array[1000];
-			strcpy(char_array, coordsStr.c_str());
-			screen->Print(char_array, 865, 186, 0xffffff);
-			*/
+			//if the turnstate is less than 2, aka it's the player's turn, draw the buttons to continue
 			if (turnState < 2) {
 				button.SetFrame(continueBtn.type);
 				button.Draw(screen, continueBtn.x, continueBtn.y);
 			}
 
+
+			//calculates which tile the player has selected---------------------//
 			currentCell = { mousePos.x / tileSize.x, mousePos.y / tileSize.y };
 
 			offset = { mousePos.x % tileSize.x, mousePos.y % tileSize.y };
@@ -1438,11 +1418,19 @@ namespace Tmpl8
 				(currentCell.y - Origin.y) + (currentCell.x - Origin.x),
 				(currentCell.y - Origin.y) - (currentCell.x - Origin.x)
 			};
-
-			Pixel* col = colTile->GetBuffer() + offset.x + offset.y * tileSize.x;
+			//-----------------------------------------------------------------//
 
 			//see if cursor hovers right outside of tile
 			//kinda disgusting with the +256, -256 but hey ho gets the job done
+
+			//how this works is actually fairly clever; there is an image stored in the assets which is basically 4 colours on the outside of the tile.
+			//these colours are on each of the 4 sides of the tile, and are different for each side.
+			//depending on where the cursor is in reference to the selected tile, it also checks this special tile image, and depending on what colour it finds, it moves the selected tile
+			//a simple, fairly dirty way to avoid doing actual maths
+			//(I didn't come up with this)
+
+			Pixel* col = colTile->GetBuffer() + offset.x + offset.y * tileSize.x;
+
 			if (*col == -256) selected.x += 1;
 			if (*col == -0xff0100) selected.y -= 1;
 			if (*col == -(0x00ff00 + 256)) selected.x -= 1;
@@ -1451,16 +1439,13 @@ namespace Tmpl8
 			//transform selected coords into screen px
 			selectedWorldPx = toScreen(selected.x, selected.y);
 
-			//selectTileS.DrawScaled(40, 20, 64, 48, screen);
-
 			//generate map with loop
 			for (int x = 0; x < worldsX; x++) {
 				for (int y = 0; y < worldsY; y++) {
 
 					coords vWorld = toScreen(x, y);
 
-					//draws tiles
-
+					//sets the frame for the gound tiles, setting the frame to '1' if the tile in worldField is 8, because 8 and 1 use the same tile sprite, the difference being that one has a mountain on top of it.
 					if (level.getWorldField(x, y) != 8) {
 						groundTiles.SetFrame(level.getWorldField(x, y));
 					}
@@ -1468,7 +1453,6 @@ namespace Tmpl8
 						groundTiles.SetFrame(1);
 					}
 
-					
 					groundTiles.Draw(screen, vWorld.x, vWorld.y);
 
 					//generates square indicators of where unit can move to
@@ -1506,6 +1490,7 @@ namespace Tmpl8
 				}
 			}
 
+			//goes over the entire map again to draw mountains on the correct tiles.
 			for (int x = 0; x < worldsX; x++) {
 				for (int y = 0; y < worldsY; y++) {
 					if (level.getWorldField(x, y) == 1) {
@@ -1524,26 +1509,25 @@ namespace Tmpl8
 			}
 
 			//draws friendly units
-			drawUnits(screen, level.fUnits, friendlyUnitsAm);
+			drawUnits(screen, level.fUnits, friendlyUnitsAm, true);
 
 			//draws enemy units
-			drawUnits(screen, level.eUnits, enemyUnitsAm);
+			drawUnits(screen, level.eUnits, enemyUnitsAm, false);
 
 			//draws objectives for both teams
 			drawObjectives(level.fObjtv, screen, &antHill);
-			drawObjectives(level.eObjtv, screen, &antHill);
+			drawObjectives(level.eObjtv, screen, &enAntHill);
 
 			if (level.areMoving()) {
 				button.SetFrame(8);
 				button.Draw(screen, confirmBtn.x, confirmBtn.y);
 			}
 
+			//----------------------------------Draws Health Bars----------------------------------//
+
 			for (auto &Unit : level.fUnits) {
-				//Unit.
 				if (Unit.isAlive()) {
 					healthBar.SetFrame(3 - Unit.getHealth());
-					//printf("%i\n", Unit.getHealth());
-
 					coords vWorld = toScreen(Unit.x, Unit.y);
 
 					healthBar.Draw(screen, vWorld.x + 16, vWorld.y - 25);
@@ -1551,10 +1535,8 @@ namespace Tmpl8
 			}
 
 			for (auto& Unit : level.eUnits) {
-				//Unit.
 				if (Unit.isAlive()) {
 					healthBar.SetFrame(3 - Unit.getHealth());
-					//printf("%i\n", Unit.getHealth());
 
 					coords vWorld = toScreen(Unit.x, Unit.y);
 
@@ -1564,7 +1546,6 @@ namespace Tmpl8
 
 			if (level.fObjtv.isAlive()) {
 				objHealthBar.SetFrame(level.fObjtv.getHealth());
-				//printf("%i\n", Unit.getHealth());
 
 				coords vWorld = toScreen(level.fObjtv.x, level.fObjtv.y);
 
@@ -1573,28 +1554,27 @@ namespace Tmpl8
 
 			if (level.eObjtv.isAlive()) {
 				objHealthBar.SetFrame(level.eObjtv.getHealth());
-				//printf("%i\n", Unit.getHealth());
 
 				coords vWorld = toScreen(level.eObjtv.x, level.eObjtv.y);
 
 				objHealthBar.Draw(screen, vWorld.x, vWorld.y - 30);
 			}
+
+			//-------------------------------------------------------------------------------------//
 		}
 		else {
 
-			//add menu here
-			//screen->Box(300, 300, 350, 350, 0x000000);
-
+			//draws the menu
 			if (worldSelect == 100) {
 
-				//memcpy(screen, planetSelect, sizeof(screen));
 				planetSelect.Draw(screen, 0, 0);
 
 				menuHeader.Draw(screen, 0, 0);
 
 				button.SetFrame(9);
 				button.Draw(screen, goBackBtn.x, goBackBtn.y);
-				//menu.Draw(screen, 0, 0);
+
+				planetSelectTxt.Draw(screen, 0, 550);
 			}
 			else {
 
@@ -1609,16 +1589,12 @@ namespace Tmpl8
 					break;
 				}
 				
-
-				//screen->Box(goBackBtn.x, goBackBtn.y, goBackBtn.getX2(), goBackBtn.getY2(), 0x000000);
 				menuHeader.Draw(screen, 0, 0);
 				button.SetFrame(goBackBtn.type);
 				button.Draw(screen, goBackBtn.x, goBackBtn.y);
 				
 				for (int t = 0; t < sizeof(levelSelectBtns[worldSelect]) / sizeof(levelSelectBtns[worldSelect][0]); t++) {
-					
-					//printf("%i\n", levelSelectBtns[worldSelect][1].getX2());
-					//screen->Box(levelSelectBtns[worldSelect][t].x, levelSelectBtns[worldSelect][t].y, levelSelectBtns[worldSelect][t].getX2(), levelSelectBtns[worldSelect][t].getY2(), 0x000000);
+
 					if (lvState[worldSelect][t] == levelState::INACCESSIBLE) {
 						button.SetFrame(10);
 					}
